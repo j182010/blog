@@ -1,0 +1,20 @@
+{
+  // 构建相关配置项
+  "build": {
+    // 构建环境变量配置
+    "env": {
+      // 指定Node运行环境为生产环境
+      "NODE_ENV": "production"
+    }
+  },
+  // 部署前安装依赖执行命令：全局安装hexo脚手架，再安装项目本地依赖
+  "installCommand": "npm install hexo-cli -g && npm install",
+  // 构建打包命令：hexo生成静态站点文件
+  "buildCommand": "hexo generate",
+  // 打包产物输出目录，hexo生成的静态文件全部存放在public文件夹
+  "outputDirectory": "public",
+  // 本地开发启动命令：hexo本地预览服务
+  "devCommand": "hexo server",
+  // 项目框架标识，无预设框架则填null
+  "framework": null
+}
