@@ -5598,7 +5598,7 @@ pre,
 /* ====== 代码块容器（羊皮纸风格，带标题栏） ====== */
 .highlight {
   position: relative;
-  padding: 36px 10px 14px 10px;
+  padding: 32px 10px 14px 10px;
   border-radius: 6px;
   box-shadow: 0 1px 2px rgba(122, 95, 52, 0.1), 0 0 0 1px #e0d6c4;
   max-height: 500px;
@@ -5610,8 +5610,8 @@ pre,
   position: absolute;
   top: 0;
   right: 0;
-  height: 36px;
-  line-height: 36px;
+  height: 32px;
+  line-height: 32px;
   padding: 0 14px;
   font-size: 12px;
   color: #7a6a52;
@@ -5659,7 +5659,7 @@ pre,
 .highlight:before {
   display: block;
   content: ' ';
-  height: 36px;
+  height: 32px;
   position: absolute;
   top: 0;
   left: 0;
@@ -5705,8 +5705,8 @@ pre,
   top: 0;
   left: 0;
   right: 0;
-  height: 36px;
-  line-height: 36px;
+  height: 32px;
+  line-height: 32px;
   padding: 0 160px 0 16px;
   font-size: 12px;
   color: #7a6a52;
