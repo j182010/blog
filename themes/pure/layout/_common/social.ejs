@@ -1,4 +1,4 @@
-<% if(theme.profile.social.links) { %>
+<% if(theme.profile && theme.profile.social && theme.profile.social.links) { %>
 	<% var tooltipClass = theme.profile.social.link_tooltip === false ? '' : 'data-toggle=tooltip data-placement=top'; %>
     <ul class="social-links">
     	<% for(var i in theme.profile.social.links) { %>

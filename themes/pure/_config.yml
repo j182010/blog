@@ -207,17 +207,17 @@ profile:
   author_description: 烧录、重启、顿悟
   location:  China
   follow: https://blog.j182010.top
-  # Social Links
+
+  # Social Links（links 置空则不显示社交图标
   social:
-    links:
-      github: https://github.com/cofess
-      weibo: http://weibo.com/cofess
-      twitter: https://twitter.com/iwebued
-      # facebook: /
-      # dribbble: /
-      behance: https://www.behance.net/cofess
-      rss: atom.xml
-    link_tooltip: true # enable the social link tooltip, options: true, false
+    # links:
+    #   github: https://github.com/cofess
+    #   weibo: http://weibo.com/cofess
+    #   twitter: https://twitter.com/iwebued
+    #   behance: https://www.behance.net/cofess
+    #   rss: atom.xml
+    # link_tooltip: true # enable the social link tooltip, options: true, false
+    
   # My Skills 
   skills:
     Git: ★★★☆☆
