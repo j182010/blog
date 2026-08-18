@@ -5577,34 +5577,37 @@ pre code {
 }
 
 /* 原始 pre（被 highlight 包裹时的样式） */
+/* 原始 pre（被 highlight 包裹时的样式） */
 pre,
 .highlight {
-  background: #f7f3ee;
+  background: #1e1e1e;
   margin: 16px 0;
   padding: 14px 16px;
   overflow: auto;
   font-size: 13px;
-  color: #3a3328;
+  color: #d4d4d4;
   line-height: 1.55;
   font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
   -webkit-font-smoothing: antialiased;
+  border-radius: 6px;
 }
 
 .highlight .gutter pre,
 .gist .gist-file .gist-data .line-numbers {
-  color: #9a8f7a;
+  color: #858585;
+  background: #1e1e1e;
 }
 
-/* ====== 代码块容器（羊皮纸风格，带标题栏） ====== */
+/* ====== 代码块容器（VS Code 暗色风格） ====== */
 .highlight {
   position: relative;
-  padding: 32px 10px 14px 10px;
+  padding: 32px 10px 16px 10px;
   border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(122, 95, 52, 0.1), 0 0 0 1px #e0d6c4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   max-height: 500px;
 }
 
-/* 复制按钮 + 展开按钮（羊皮纸风格，标题栏右侧） */
+/* 复制按钮 + 展开按钮（VS Code 暗色风格） */
 .highlight .copy-btn,
 .highlight .expand-btn {
   position: absolute;
@@ -5614,10 +5617,10 @@ pre,
   line-height: 32px;
   padding: 0 14px;
   font-size: 12px;
-  color: #7a6a52;
+  color: #cccccc;
   background: transparent;
   border: none;
-  border-left: 1px solid #ddd5c7;
+  border-left: 1px solid #3c3c3c;
   cursor: pointer;
   z-index: 3;
   transition: color 0.15s ease, background-color 0.15s ease;
@@ -5634,12 +5637,12 @@ pre,
 
 .highlight .copy-btn:hover,
 .highlight .expand-btn:hover {
-  color: #a3522a;
-  background-color: #efe9e0;
+  color: #ffffff;
+  background-color: #3a3d41;
 }
 
 .highlight .copy-btn.copied {
-  color: #5a8364;
+  color: #4ec9b0;
 }
 
 .highlight.expanded {
@@ -5647,7 +5650,7 @@ pre,
 }
 
 .highlight.expanded .expand-btn {
-  color: #5a8364;
+  color: #4ec9b0;
 }
 
 .highlight .copy-btn:focus,
@@ -5655,7 +5658,7 @@ pre,
   outline: none;
 }
 
-/* 标题栏背景 */
+/* 标题栏背景（VS Code 暗色） */
 .highlight:before {
   display: block;
   content: ' ';
@@ -5664,11 +5667,11 @@ pre,
   top: 0;
   left: 0;
   right: 0;
-  background-color: #efe9e0;
+  background-color: #252526;
   padding: 0 10px;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
-  border-bottom: 1px solid #ddd5c7;
+  border-bottom: 1px solid #3c3c3c;
 }
 
 .highlight pre {
@@ -5699,7 +5702,7 @@ pre,
   width: 100% !important;
 }
 
-/* 如果标题栏中有 figcaption，显示文件名 */
+/* 如果标题栏中有 figcaption，显示文件名（VS Code 暗色） */
 .highlight figcaption {
   position: absolute;
   top: 0;
@@ -5709,7 +5712,7 @@ pre,
   line-height: 32px;
   padding: 0 160px 0 16px;
   font-size: 12px;
-  color: #7a6a52;
+  color: #cccccc;
   z-index: 2;
   margin-bottom: 0;
   overflow: hidden;
@@ -5720,7 +5723,7 @@ pre,
 .highlight figcaption a {
   float: right;
   padding-right: 12px;
-  color: #7a6a52;
+  color: #cccccc;
 }
 
 .highlight .line {
@@ -5733,11 +5736,12 @@ pre,
   text-align: right;
   padding-right: 10px;
   padding-left: 8px;
-  color: #9a8f7a;
+  color: #858585;
+  background: #1e1e1e;
   user-select: none;
 }
 
-/* 滚动条样式（羊皮纸暖色） */
+/* 滚动条样式（VS Code 暗色） */
 .highlight::-webkit-scrollbar,
 pre::-webkit-scrollbar {
   height: 10px;
@@ -5745,16 +5749,150 @@ pre::-webkit-scrollbar {
 }
 .highlight::-webkit-scrollbar-thumb,
 pre::-webkit-scrollbar-thumb {
-  background: #d4c9b5;
+  background: #424242;
   border-radius: 5px;
 }
 .highlight::-webkit-scrollbar-thumb:hover,
 pre::-webkit-scrollbar-thumb:hover {
-  background: #b8ab92;
+  background: #5a5a5a;
 }
 .highlight::-webkit-scrollbar-track,
 pre::-webkit-scrollbar-track {
-  background: #f7f3ee;
+  background: #1e1e1e;
+}
+
+/* ====== 消除代码块左右三角形 ====== */
+pre,
+.highlight {
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+.highlight .gutter {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  width: auto !important;       /* 行号列宽度自适应，不被强制压缩 */
+  min-width: 40px !important;   /* 保证至少 40px 宽，行号不挤压 */
+}
+.highlight .gutter pre {
+  border-radius: 0 !important;  /* 行号栏取消所有圆角，彻底消除三角形 */
+  padding-left: 12px !important;
+  padding-right: 16px !important; /* 右侧加大空间，防止数字被覆盖 */
+  margin: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+.highlight td.code pre {
+  border-radius: 0 !important;  /* 代码区同样取消所有圆角 */
+  margin: 0 !important;
+  padding-left: 10px !important;
+}
+/* 清除可能画出三角形的伪元素 */
+.highlight .gutter::before,
+.highlight .gutter::after,
+.highlight td.code::before,
+.highlight td.code::after,
+.highlight table::before,
+.highlight table::after,
+.highlight tr::before,
+.highlight tr::after,
+.highlight td::before,
+.highlight td::after {
+  display: none !important;
+  content: none !important;
+}
+.highlight table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  /* 移除 table-layout: fixed，让行号列能自适应宽度 */
+}
+
+/* ====== VS Code Dark+ 语法高亮配色 ====== */
+
+/* 关键字（if/for/while/return/break/switch 等） → 蓝紫 */
+.highlight .keyword,
+.highlight .selector-tag,
+.highlight .meta-keyword {
+  color: #c586c0;
+}
+
+/* 控制流关键字（if/else/for/return） → 蓝 */
+.highlight .keyword.control,
+.highlight .keyword.operator {
+  color: #569cd6;
+}
+
+/* 字符串 → 橙棕 */
+.highlight .string,
+.highlight .regexp,
+.highlight .template-string,
+.highlight .selector-attr,
+.highlight .attribute {
+  color: #ce9178;
+}
+
+/* 注释 → 绿 */
+.highlight .comment,
+.highlight .quote {
+  color: #6a9955;
+  font-style: italic;
+}
+
+/* 函数名 → 黄 */
+.highlight .function,
+.highlight .function .title,
+.highlight .title.function_,
+.highlight .title.function,
+.highlight .name,
+.highlight .selector-class,
+.highlight .selector-id {
+  color: #dcdcaa;
+}
+
+/* 数字 / 布尔 / null → 浅绿 */
+.highlight .number,
+.highlight .literal,
+.highlight .boolean,
+.highlight .literal.number {
+  color: #b5cea8;
+}
+
+/* 类型 / 类名 / 内置对象 → 青 */
+.highlight .type,
+.highlight .class,
+.highlight .built_in,
+.highlight .typename {
+  color: #4ec9b0;
+}
+
+/* 变量 / 参数 → 浅蓝 */
+.highlight .variable,
+.highlight .params,
+.highlight .meta {
+  color: #9cdcfe;
+}
+
+/* 操作符（= + - * / 等） */
+.highlight .operator {
+  color: #d4d4d4;
+}
+
+/* 标签（HTML 标签名） */
+.highlight .tag {
+  color: #569cd6;
+}
+
+/* 宏 / 预处理指令 */
+.highlight .preprocessor,
+.highlight .meta-keyword {
+  color: #c586c0;
+}
+
+/* 删除线 / 插入线 */
+.highlight .deletion {
+  color: #f48771;
+}
+.highlight .addition {
+  color: #89d185;
 }
 
 /*
@@ -9328,3 +9466,4 @@ body.okayNav-loaded {
     max-height: 200px;
   }
 }
+
