@@ -31,7 +31,7 @@ site:
     width: 40
     height: 40
     url: ../images/logo.png
-  title: void # 页面title
+  title: Jett # 页面title
   favicon: /favicon.png
   board: <p>欢迎交流与分享经验!</p> # 站点公告
   copyright: false # 底部版权信息
@@ -202,9 +202,9 @@ profile:
   articleSelfBlock: false # 关闭文章下方的自我介绍
   avatar: images/avatar.jpg
   gravatar: # Gravatar email address, if you enable Gravatar, your avatar config will be overriden
-  author: void
-  author_title: 码本无尘，何须执着
-  author_description: 烧录、重启、顿悟
+  author: Jett
+  author_title: Hello World, Jett Here.
+  author_description: Eat. Sleep. Code. Repeat.
   location:  China
   follow: https://blog.j182010.top
 
