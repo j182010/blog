@@ -9467,3 +9467,68 @@ body.okayNav-loaded {
   }
 }
 
+/* ====== 文章内 [TOC] 目录样式 ====== */
+.toc {
+  background: #fafafa;
+  border: 1px solid #eaeaea;
+  border-radius: 6px;
+  padding: 16px 16px 16px 32px;
+  margin: 16px 0 24px 0;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.toc:before {
+  content: "📖 目录";
+  display: block;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #333;
+}
+.toc ol, .toc ul {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.toc li {
+  line-height: 1.9;
+}
+.toc a {
+  color: #555;
+  text-decoration: none;
+}
+.toc a:hover {
+  color: #2196f3;
+}
+
+/* ====== 文章内 [TOC] 目录（VS Code 暗色风格） ====== */
+/*
+.toc {
+  background: #1e1e1e;
+  border: 1px solid #3c3c3c;
+  border-radius: 6px;
+  padding: 16px 16px 16px 32px;
+  margin: 16px 0 24px 0;
+  font-size: 14px;
+  line-height: 1.9;
+  color: #d4d4d4;
+}
+.toc:before {
+  content: "📖 目录";
+  display: block;
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #4ec9b0;
+}
+.toc ol, .toc ul {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.toc a {
+  color: #9cdcfe;
+  text-decoration: none;
+}
+.toc a:hover {
+  color: #569cd6;
+}
+*/

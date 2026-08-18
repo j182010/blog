@@ -5,9 +5,13 @@ tags: [单片机]
 categories: 技术文档
 ---
 
+<!-- toc -->
+
 ## 一、背景：串口日志的痛点
 
 串口打印是嵌入式开发中最常见的调试手段，但在实际工程中越来越力不从心。
+
+<img src="/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-0.png" width="800"><br>
 
 1. **实时性杀手**：在调试中断处理程序、电机控制、无线通讯等对时序极为敏感的场景时，UART `printf` 通过轮询或中断发送一个字节往往要耗时数微秒到数毫秒。轻则导致通信丢帧，重则系统直接崩溃。**RTT 的写入操作本质上只是一次内存拷贝，延迟在纳秒级，甚至可以在中断服务函数（ISR）中直接安全调用。**
 
@@ -53,8 +57,8 @@ MCU 工程移植 SEGGER RTT 源码后，会在芯片 RAM 中创建 **RTT 控制�
 
 | 缓冲区                 | 写指针由谁修改              | 读指针由谁修改                 |
 | ------------------- | -------------------- | ----------------------- |
-| **上行缓冲区**（MCU → PC） | **仅 MCU 端**写入        | **仅 J-Link（Host）**读取后更新 |
-| **下行缓冲区**（PC → MCU） | **仅 J-Link（Host）**写入 | **仅 MCU 端**读取后更新        |
+| **上行缓冲区**（MCU → PC） | **仅 MCU 端**写入        | **仅 J-Link**（Host）读取后更新 |
+| **下行缓冲区**（PC → MCU） | **仅 J-Link**（Host）写入 | **仅 MCU 端**读取后更新        |
 
 双方各写各的指针，永远不冲突，**无需任何锁、无需关中断、无需临界区保护**。这就是为什么 RTT 可以在 ISR 中直接调用的根本原因。
 
@@ -225,24 +229,6 @@ int fputc(int ch, FILE *f)
 #define ULOG_BACKEND_USING_CONSOLE // 控制台后端
 #define ULOG_USING_FILTER          // 运行时过滤
 /* end of Utilities */
-```
-
-### 6.2 使用方式
-
-> 📌 以下示例基于 RT-Thread 环境，裸机工程需自行实现类似的宏封装。
-
-```c
-#define DBG_TAG  "main"
-#define DBG_LVL  DBG_LOG
-#include <rtdbg.h>
-
-int main(void) {
-    LOG_D("ulog debug is ok");
-    LOG_I("system init done, tick=%u", rt_tick_get());
-    LOG_W("sensor timeout, retry...");
-    LOG_E("fatal: nvram crc mismatch");
-    return 0;
-}
 ```
 
 uLog 内部用 `CSI_START` / `CSI_END` 包裹 ANSI 颜色码（如 `\033[31m` 红色、`\033[32m` 绿色），RTT Viewer 直接渲染成彩色行，日志可读性质实现飞跃。

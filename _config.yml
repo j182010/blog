@@ -54,6 +54,27 @@ prismjs:
   preprocess: true
   line_number: true
   tab_replace: ''
+  
+# Markdown 渲染器（hexo-renderer-marked）配置：开启 [TOC] 自动生成目录
+marked:
+  gfm: true
+  pedantic: false
+  sanitize: false
+  breaks: true
+  smartLists: true
+  smartypants: true
+  quotes: '“”‘’'
+  modifyAnchors: ''         # 标题锚点前缀，可不填
+  autolink: true
+  toc: true                 # ✅ 关键：启用 [TOC] 标记
+  headingIds: true          # ✅ 标题自动生成 id，让目录锚点跳转生效
+  # hexo-toc 插件：正文 [TOC] 自动生成目录
+toc:
+  max_depth: 4          # 最多提取到第几级标题（建议 4，即 h1~h4）
+  min_depth: 2          # 从第几级开始提取（建议 2，跳过 h1/文章大标题）
+  class: toc            # 生成的 <ol>/<ul> class 名
+  list_number: false    # 列表前不加 1.2.3. 数字序号
+  tight: false          # 列表项之间留间距，更美观
 
 # Home page setting
 # path: Root path for your blogs index page. (default = '')
