@@ -8,31 +8,41 @@
 <script>
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
-    // 1. 找到正文内 hexo-toc 插入的目录容器（class="toc"），复制到侧边栏，保证锚点 100% 匹配
-    var bodyToc = document.querySelector('.post-content .toc, article .toc, main .toc, .toc');
+    // ============================================================
+    // 方案 A 重做：从正文的 .toc 容器复制（hexo-toc 保证它和 span id 100% 匹配）
+    // 【关键】不 remove 正文 .toc，而是给它加 class="hexo-toc-hidden"，
+    //        然后由 CSS 隐藏正文目录，DOM 节点仍然保留可复制。
+    // ============================================================
+    var bodyToc = document.querySelector('.post-content .toc, article .toc, main .toc, .toc:not(.toc-widget .toc)');
     var sidebarBox = document.getElementById('sidebar-toc-content');
-    if (bodyToc && sidebarBox) {
-      sidebarBox.innerHTML = bodyToc.innerHTML;
-      bodyToc.remove();   // ← 加这一行：从正文里彻底删掉目录 DOM
-    } else {
-      sidebarBox.innerHTML = '<p style="color:#aaa;font-size:12px;">未检测到正文目录，请在文章中写入 &lt;!-- toc --&gt;</p>';
+
+    if (!bodyToc || !sidebarBox) {
+      if (sidebarBox) sidebarBox.innerHTML =
+        '<p style="color:#aaa;font-size:12px;">未检测到正文目录，请在文章中写入 &lt;!-- toc --&gt;</p>';
+      return;
     }
 
-    // 2. 给所有目录链接加「偏移跳转」，避免被顶部 header 挡住
-    var sidebarToc = document.getElementById('sidebar-toc-widget');
-    if (!sidebarToc) return;
-    var links = sidebarToc.querySelectorAll('a[href^="#"]');
-    if (!links.length) return;
+    // 1. 先复制再隐藏正文目录（DOM 节点不删，下次刷新仍然能复制）
+    sidebarBox.innerHTML = bodyToc.innerHTML;
+    bodyToc.classList.add('hexo-toc-hidden');
+
+    // 2. 修正目录所有链接：确保 href 存在，并加「偏移跳转」避免被 header 挡住
+    var links = sidebarBox.querySelectorAll('a[href^="#"]');
+    if (!links.length) {
+      // hexo-toc 某些版本输出的 a 没有 href？兜底：找正文里所有 <span id="xxx"> 重新生成
+      rebuildTocFromHeadings(sidebarBox);
+      links = sidebarBox.querySelectorAll('a[href^="#"]');
+      if (!links.length) return;
+    }
 
     function scrollToId(hash) {
       if (!hash || hash.charAt(0) !== '#') return;
       var id = decodeURIComponent(hash.substring(1));
-      var target = document.getElementById(id)
-                || document.querySelector('span[id="' + id + '"]')
-                || document.querySelector('[id="' + id + '"]');
+      var target = document.querySelector('span[id="' + id + '"]')
+                || document.getElementById(id);
       if (!target) return;
       var rect = target.getBoundingClientRect();
-      var topOffset = window.scrollY + rect.top - 80; // 顶部偏移 80px 绕过 header
+      var topOffset = window.scrollY + rect.top - 80;
       window.scrollTo({ top: topOffset, behavior: 'smooth' });
     }
 
@@ -47,14 +57,14 @@
       });
     });
 
-    // 3. 滚动时自动高亮当前章节
+    // 3. 滚动自动高亮
     var headingMap = {};
     links.forEach(function (a) {
       var href = a.getAttribute('href');
       if (!href || href.charAt(0) !== '#') return;
       var id = decodeURIComponent(href.substring(1));
-      var target = document.getElementById(id)
-                || document.querySelector('span[id="' + id + '"]');
+      var target = document.querySelector('span[id="' + id + '"]')
+                || document.getElementById(id);
       if (target) headingMap[id] = { a: a, target: target };
     });
     var ids = Object.keys(headingMap);
@@ -89,9 +99,53 @@
     window.addEventListener('resize', setActive);
     try { setActive(); } catch (e) {}
   });
+
+  // ============================================================
+  // 兜底：如果 hexo-toc 生成的目录里链接无 href，直接从正文中的 h2~h4 + <span id> 重建
+  // ============================================================
+  function rebuildTocFromHeadings(sidebarBox) {
+    var spans = document.querySelectorAll('h2 span[id], h3 span[id], h4 span[id]');
+    if (!spans.length) {
+      sidebarBox.innerHTML = '<p style="color:#aaa;font-size:12px;">未检测到章节标题</p>';
+      return;
+    }
+    var html = '<ol class="toc">';
+    var lastLevel = 2;
+    spans.forEach(function (span) {
+      var heading = span.parentElement;
+      var level = parseInt(heading.tagName.substring(1), 10);
+      var text = (heading.innerText || heading.textContent || '').trim();
+      if (!text) return;
+      while (level > lastLevel) { html += '<ol class="toc-child"><li class="toc-item toc-level-' + level + '">'; lastLevel++; }
+      while (level < lastLevel) { html += '</li></ol>'; lastLevel--; }
+      if (level === lastLevel) {
+        if (html.substring(html.length - 5) === '</li>') html = html.substring(0, html.length - 5) + '</li>';
+        html += '<li class="toc-item toc-level-' + level + '">';
+      }
+      html += '<a class="toc-link" href="#' + encodeURIComponent(span.id) + '"><span class="toc-text">' + text + '</span></a>';
+    });
+    while (lastLevel > 2) { html += '</li></ol>'; lastLevel--; }
+    html += '</li></ol>';
+    sidebarBox.innerHTML = html;
+  }
 })();
 </script>
 <style>
+  /* ====== 核心：隐藏正文内 hexo-toc 插入的目录（保留 DOM，方便复制）====== */
+  .hexo-toc-hidden,
+  .post-content .toc.hexo-toc-hidden,
+  article .toc.hexo-toc-hidden,
+  main .toc.hexo-toc-hidden {
+    display: none !important;
+  }
+  /* 同时兼容你之前可能写到 style.css 里的旧隐藏规则 */
+  .post-content .toc:not(.toc-widget .toc),
+  article .toc:not(.toc-widget .toc),
+  body.is-post .post-content > .toc {
+    display: none !important;
+  }
+
+  /* 侧边栏目录样式 */
   .toc-widget .toc-content ol,
   .toc-widget .toc-content ul {
     padding-left: 16px;
