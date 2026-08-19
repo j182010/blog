@@ -5582,14 +5582,20 @@ pre,
 .highlight {
   background: #1e1e1e;
   margin: 16px 0;
-  padding: 14px 16px;
-  overflow: auto;
   font-size: 13px;
   color: #d4d4d4;
   line-height: 1.55;
   font-family: "Menlo", "Monaco", "Consolas", "Courier New", monospace;
   -webkit-font-smoothing: antialiased;
   border-radius: 6px;
+}
+/* 单独给独立 pre（无 .highlight 包裹时）保留 padding */
+pre {
+  padding: 14px 16px;
+  overflow: auto;
+  /* Firefox 滚动条支持 */
+  scrollbar-width: thin;
+  scrollbar-color: #424242 #1e1e1e;
 }
 
 .highlight .gutter pre,
@@ -5601,9 +5607,10 @@ pre,
 /* ====== 代码块容器（VS Code 暗色风格） ====== */
 .highlight {
   position: relative;
-  padding: 32px 10px 16px 10px;
+  padding: 32px 0 0 0;  /* 上下左右 padding 改为仅顶部留标题栏位置 */
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden !important;  /* 外层固定，不让标题栏和按钮滚动 */
   max-height: 500px;
 }
 
@@ -5648,6 +5655,10 @@ pre,
 .highlight.expanded {
   max-height: none;
 }
+.highlight.expanded table,
+.highlight.expanded pre {
+  max-height: none;   /* 展开时内部滚动区域也取消高度限制 */
+}
 
 .highlight.expanded .expand-btn {
   color: #4ec9b0;
@@ -5677,14 +5688,24 @@ pre,
 .highlight pre {
   border: none;
   margin: 0;
+  padding: 14px 16px;
+  overflow: hidden !important;  /* 禁用内部 pre 的独立滚动，交给 table 统一滚 */
+  white-space: pre;
+  word-wrap: normal;
+  max-height: none;             /* 取消内部 pre 的高度限制，由外层 table 控制 */
 }
-
 .highlight table {
   position: relative;
   border: none;
   width: 100%;
   margin: 0;
   padding: 0;
+  display: block;       /* 让 table 能设置 max-height 和 overflow */
+  overflow: auto;       /* 表格区域独立滚动 */
+  max-height: 468px;    /* 500px - 32px 标题栏 = 468px */
+  /* Firefox 滚动条支持 */
+  scrollbar-width: thin;
+  scrollbar-color: #424242 #1e1e1e;
 }
 
 .highlight tr {
@@ -5739,24 +5760,24 @@ pre,
   color: #858585;
   background: #1e1e1e;
   user-select: none;
+  overflow: hidden !important;   /* 行号列强制禁用滚动条 */
 }
-
 /* 滚动条样式（VS Code 暗色） */
-.highlight::-webkit-scrollbar,
+.highlight table::-webkit-scrollbar,
 pre::-webkit-scrollbar {
   height: 10px;
   width: 10px;
 }
-.highlight::-webkit-scrollbar-thumb,
+.highlight table::-webkit-scrollbar-thumb,
 pre::-webkit-scrollbar-thumb {
   background: #424242;
   border-radius: 5px;
 }
-.highlight::-webkit-scrollbar-thumb:hover,
+.highlight table::-webkit-scrollbar-thumb:hover,
 pre::-webkit-scrollbar-thumb:hover {
   background: #5a5a5a;
 }
-.highlight::-webkit-scrollbar-track,
+.highlight table::-webkit-scrollbar-track,
 pre::-webkit-scrollbar-track {
   background: #1e1e1e;
 }
@@ -5765,6 +5786,16 @@ pre::-webkit-scrollbar-track {
 pre,
 .highlight {
   border-radius: 6px !important;
+}
+/* 独立的 pre（无 .highlight 包裹时）保留滚动 */
+pre {
+  overflow: auto !important;
+  /* Firefox 滚动条支持 */
+  scrollbar-width: thin;
+  scrollbar-color: #424242 #1e1e1e;
+}
+/* .highlight 外层必须 overflow:hidden，固定顶部按钮和标题栏 */
+.highlight {
   overflow: hidden !important;
 }
 .highlight .gutter {
@@ -5780,11 +5811,13 @@ pre,
   margin: 0 !important;
   width: 100% !important;
   box-sizing: border-box;
+  overflow: hidden !important;   /* 再次强制行号列无滚动条 */
 }
 .highlight td.code pre {
   border-radius: 0 !important;  /* 代码区同样取消所有圆角 */
   margin: 0 !important;
   padding-left: 10px !important;
+  overflow: hidden !important;   /* 代码列也不要独立滚动条，跟随外层 table 滚动 */
 }
 /* 清除可能画出三角形的伪元素 */
 .highlight .gutter::before,
