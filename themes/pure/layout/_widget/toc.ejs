@@ -1,4 +1,3 @@
-<% if (page.layout === 'post' && page.toc !== false) { %>
 <div class="widget toc-widget" id="sidebar-toc-widget">
   <h3 class="widget-title"><i class="iconfont icon-list-alt"></i> 章节目录</h3>
   <div class="widget-content toc-content" id="sidebar-toc-content">
@@ -7,25 +6,28 @@
 </div>
 <script>
 (function () {
-  document.addEventListener('DOMContentLoaded', function () {
-    // ============================================================
-    // 方案 A 重做：从正文的 .toc 容器复制（hexo-toc 保证它和 span id 100% 匹配）
-    // 【关键】不 remove 正文 .toc，而是给它加 class="hexo-toc-hidden"，
-    //        然后由 CSS 隐藏正文目录，DOM 节点仍然保留可复制。
-    // ============================================================
-        var bodyToc = document.querySelector('.article-entry > .toc, .article-entry.marked-body > .toc, .marked-body > .toc, main .toc:not(.toc-widget .toc), .article .toc:not(.toc-widget .toc)');
-        var sidebarBox = document.getElementById('sidebar-toc-content');
+   document.addEventListener('DOMContentLoaded', function () {
+    // ========== 关键：先判断是不是文章详情页 ==========
+    // 文章页特征 1：body 里的 main 只包含 1 篇文章（没有列表 class）
+    // 文章页特征 2：正文中存在 hexo-toc 生成的 .toc 节点
+    var isPostPage = !!(document.querySelector('article.article-type-post, article.article-detail, main .article-post, .post-single')
+                    || (document.querySelector('.article-entry.marked-body') && document.querySelectorAll('.article').length <= 1));
+    var wrap = document.getElementById('sidebar-toc-widget');
 
-    if (!bodyToc || !sidebarBox) {
-      // 找不到正文目录：直接隐藏整个 toc 挂件外壳，不留空壳
-      var wrap = document.getElementById('sidebar-toc-widget');
+    // 找正文内的目录节点
+    var bodyToc = document.querySelector('.article-entry > .toc, .article-entry.marked-body > .toc, .marked-body > .toc, main .toc:not(.toc-widget .toc), .article .toc:not(.toc-widget .toc)');
+    var sidebarBox = document.getElementById('sidebar-toc-content');
+
+    // 不是文章页，或没写 <!-- toc -->（没有 .toc 节点）→ 直接隐藏整个 toc 挂件外壳
+    if (!wrap || !sidebarBox || !isPostPage || !bodyToc) {
       if (wrap) wrap.style.display = 'none';
       return;
     }
 
-    // 1. 先复制再隐藏正文目录（DOM 节点不删，下次刷新仍然能复制）
+    // ✅ 是文章页且有目录：复制内容到侧边栏，隐藏正文目录
     sidebarBox.innerHTML = bodyToc.innerHTML;
     bodyToc.classList.add('hexo-toc-hidden');
+
 
     // 2. 修正目录所有链接：确保 href 存在，并加「偏移跳转」避免被 header 挡住
     var links = sidebarBox.querySelectorAll('a[href^="#"]');
@@ -177,4 +179,3 @@
     color: #2196f3;
   }
 </style>
-<% } %>
