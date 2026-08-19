@@ -1,4 +1,4 @@
-<% if (is_post() && page.toc !== false) { %>
+<% if (page.layout === 'post' && page.toc !== false) { %>
 <div class="widget toc-widget" id="sidebar-toc-widget">
   <h3 class="widget-title"><i class="iconfont icon-list-alt"></i> 章节目录</h3>
   <div class="widget-content toc-content" id="sidebar-toc-content">
@@ -13,12 +13,13 @@
     // 【关键】不 remove 正文 .toc，而是给它加 class="hexo-toc-hidden"，
     //        然后由 CSS 隐藏正文目录，DOM 节点仍然保留可复制。
     // ============================================================
-    var bodyToc = document.querySelector('.post-content .toc, article .toc, main .toc, .toc:not(.toc-widget .toc)');
-    var sidebarBox = document.getElementById('sidebar-toc-content');
+        var bodyToc = document.querySelector('.article-entry > .toc, .article-entry.marked-body > .toc, .marked-body > .toc, main .toc:not(.toc-widget .toc), .article .toc:not(.toc-widget .toc)');
+        var sidebarBox = document.getElementById('sidebar-toc-content');
 
     if (!bodyToc || !sidebarBox) {
-      if (sidebarBox) sidebarBox.innerHTML =
-        '<p style="color:#aaa;font-size:12px;">未检测到正文目录，请在文章中写入 &lt;!-- toc --&gt;</p>';
+      // 找不到正文目录：直接隐藏整个 toc 挂件外壳，不留空壳
+      var wrap = document.getElementById('sidebar-toc-widget');
+      if (wrap) wrap.style.display = 'none';
       return;
     }
 

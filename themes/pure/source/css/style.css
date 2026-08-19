@@ -9532,3 +9532,18 @@ body.okayNav-loaded {
   color: #569cd6;
 }
 */
+
+/* ====== 隐藏正文内 hexo-toc 生成的目录，只保留右侧 sidebar 里的目录 ====== */
+.article-entry > .toc,
+.article-entry.marked-body > .toc,
+.marked-body > .toc,
+article .post-body > .toc,
+article .article-body > .toc,
+.article-content > .toc,
+.article-inner > .toc,
+.post > .toc,
+article > .toc,
+main > .toc,
+body.is-post .toc:not(.toc-widget .toc):not(.toc-content .toc) {
+  display: none !important;
+}

@@ -1,13 +1,13 @@
 # menu
 menu:
   Home: .
-  Archives: archives  # 归档
-  Categories: categories  # 分类
-  Tags: tags  # 标签
-  Repository: repository  # github repositories
-  Books: books  # 豆瓣书单
-  #Links: links  # 友链
-  About: about  # 关于
+  Archives: archives/  # 归档
+  Categories: categories/  # 分类
+  Tags: tags/  # 标签
+  Repository: repository/  # github repositories
+  Books: books/  # 豆瓣书单
+  #Links: links/  # 友链
+  About: about/  # 关于
 
 # Enable/Disable menu icons
 menu_icons:
@@ -113,7 +113,7 @@ share:
 # 项目仓库信息（将会覆盖 github 项）
 repository:
   platform: github # 托管平台（github | gitee）
-  username: cofess # 用户名
+  username: j182010 # 用户名
 
 # Comment
 # Gitment
