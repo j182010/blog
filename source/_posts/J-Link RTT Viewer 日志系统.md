@@ -247,13 +247,15 @@ J-Link 软件在本地启动一个 **Telnet 服务**（默认 `127.0.0.1:19021`�
 
 > **触发条件**：只要 **J-Link 处于激活工作状态**，该 Telnet 服务就会自动启动——例如 Keil/IAR 进入调试模式，或 J-Link RTT Viewer 已成功连接目标芯片。
 
-*图：RTT Telnet 服务架构示意。*
+*图：RTT Telnet 路径。*
 
 ![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-2.png)
 
 ### 7.2 Xshell 配置
 
 新建会话 → 协议选 **TELNET** → 主机 `127.0.0.1` → 端口 `19021` → 建议勾选"连接异常关闭时自动重新连接"。
+
+<img src="/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-3.png" width="800">
 
 ### 7.3 日志记录
 
