@@ -61,13 +61,13 @@ pagination:
 # Sidebar
 sidebar: right
 widgets:
-  - board  
+  - toc          # ← 追加这行，章节目录会出现在右侧 Sidebar 底部 
+  - board
   - category
   - tag
   - tagcloud
   - archive
-  - recent_posts
-
+  - recent_posts  
 # display widgets at the bottom of index pages (pagination == 2)
 index_widgets:
 # - category

@@ -1,0 +1,125 @@
+<% if (is_post() && page.toc !== false) { %>
+<div class="widget toc-widget" id="sidebar-toc-widget">
+  <h3 class="widget-title"><i class="iconfont icon-list-alt"></i> 章节目录</h3>
+  <div class="widget-content toc-content" id="sidebar-toc-content">
+    <p style="color:#aaa;font-size:12px;">加载中...</p>
+  </div>
+</div>
+<script>
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. 找到正文内 hexo-toc 插入的目录容器（class="toc"），复制到侧边栏，保证锚点 100% 匹配
+    var bodyToc = document.querySelector('.post-content .toc, article .toc, main .toc, .toc');
+    var sidebarBox = document.getElementById('sidebar-toc-content');
+    if (bodyToc && sidebarBox) {
+      sidebarBox.innerHTML = bodyToc.innerHTML;
+      bodyToc.remove();   // ← 加这一行：从正文里彻底删掉目录 DOM
+    } else {
+      sidebarBox.innerHTML = '<p style="color:#aaa;font-size:12px;">未检测到正文目录，请在文章中写入 &lt;!-- toc --&gt;</p>';
+    }
+
+    // 2. 给所有目录链接加「偏移跳转」，避免被顶部 header 挡住
+    var sidebarToc = document.getElementById('sidebar-toc-widget');
+    if (!sidebarToc) return;
+    var links = sidebarToc.querySelectorAll('a[href^="#"]');
+    if (!links.length) return;
+
+    function scrollToId(hash) {
+      if (!hash || hash.charAt(0) !== '#') return;
+      var id = decodeURIComponent(hash.substring(1));
+      var target = document.getElementById(id)
+                || document.querySelector('span[id="' + id + '"]')
+                || document.querySelector('[id="' + id + '"]');
+      if (!target) return;
+      var rect = target.getBoundingClientRect();
+      var topOffset = window.scrollY + rect.top - 80; // 顶部偏移 80px 绕过 header
+      window.scrollTo({ top: topOffset, behavior: 'smooth' });
+    }
+
+    links.forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var href = a.getAttribute('href');
+        if (href && href.charAt(0) === '#') {
+          e.preventDefault();
+          history.replaceState(null, '', href);
+          scrollToId(href);
+        }
+      });
+    });
+
+    // 3. 滚动时自动高亮当前章节
+    var headingMap = {};
+    links.forEach(function (a) {
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) !== '#') return;
+      var id = decodeURIComponent(href.substring(1));
+      var target = document.getElementById(id)
+                || document.querySelector('span[id="' + id + '"]');
+      if (target) headingMap[id] = { a: a, target: target };
+    });
+    var ids = Object.keys(headingMap);
+    if (!ids.length) return;
+
+    function setActive() {
+      var currentId = ids[0];
+      ids.forEach(function (id) {
+        var item = headingMap[id];
+        if (!item || !item.target) return;
+        var rect = item.target.getBoundingClientRect();
+        if (rect.top <= 110) currentId = id;
+      });
+      links.forEach(function (a) {
+        var li = a.closest ? a.closest('li') : null;
+        if (li) li.classList.remove('active');
+      });
+      var cur = headingMap[currentId];
+      if (cur && cur.a) {
+        var li = cur.a.closest ? cur.a.closest('li') : null;
+        while (li && li.tagName === 'LI') {
+          li.classList.add('active');
+          var pUl = li.parentElement;
+          if (pUl && (pUl.tagName === 'UL' || pUl.tagName === 'OL')) {
+            var pLi = pUl.closest ? pUl.closest('li') : null;
+            li = pLi;
+          } else break;
+        }
+      }
+    }
+    window.addEventListener('scroll', setActive, { passive: true });
+    window.addEventListener('resize', setActive);
+    try { setActive(); } catch (e) {}
+  });
+})();
+</script>
+<style>
+  .toc-widget .toc-content ol,
+  .toc-widget .toc-content ul {
+    padding-left: 16px;
+    margin: 4px 0;
+    list-style: none;
+  }
+  .toc-widget .toc-content li {
+    line-height: 1.85;
+    font-size: 13px;
+    border-left: 2px solid transparent;
+    padding-left: 6px;
+    margin-left: -8px;
+    transition: all 0.15s ease;
+  }
+  .toc-widget .toc-content li.active > a {
+    color: #2196f3;
+    font-weight: bold;
+  }
+  .toc-widget .toc-content li.active {
+    border-left-color: #2196f3;
+  }
+  .toc-widget .toc-content a {
+    color: #666;
+    text-decoration: none;
+    display: block;
+  }
+  .toc-widget .toc-content a:hover {
+    color: #2196f3;
+  }
+</style>
+<% } %>
