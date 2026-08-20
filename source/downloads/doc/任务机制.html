@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>任务机制讲解 · 滚动式</title>
+    <style>
+        /* ========== 全局重置 & 基础 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', 'WenQuanYi Micro Hei', sans-serif;
+            background: #f5f7fb;
+            color: #1e293b;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ========== 左侧导航 ========== */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 220px;
+            height: 100vh;
+            background: #0f172a;
+            color: #e2e8f0;
+            overflow-y: auto;
+            padding: 28px 0 20px 0;
+            z-index: 100;
+            box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        .sidebar-logo {
+            padding: 0 20px 20px 20px;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .sidebar-logo h3 {
+            font-size: 1.1em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+        .sidebar-logo small {
+            display: block;
+            font-size: 0.7em;
+            color: #64748b;
+            font-weight: 400;
+            -webkit-text-fill-color: #64748b;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+        }
+        .nav-list {
+            list-style: none;
+            padding: 0 8px;
+            flex: 1;
+        }
+        .nav-list li {
+            padding: 8px 14px;
+            margin: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid transparent;
+            user-select: none;
+        }
+        .nav-list li:hover {
+            background: rgba(99, 102, 241, 0.12);
+            color: #e2e8f0;
+        }
+        .nav-list li.active {
+            background: rgba(99, 102, 241, 0.18);
+            color: #c7d2fe;
+            border-left-color: #818cf8;
+            font-weight: 500;
+        }
+        .nav-list li .nav-index {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            font-size: 0.7em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .nav-list li.active .nav-index {
+            background: #818cf8;
+            color: #0f172a;
+        }
+        .nav-list li .nav-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ========== 右侧主内容（居中布局） ========== */
+        .main {
+            margin-left: 220px;
+            flex: 1;
+            padding: 0 24px 60px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f5f7fb;
+            min-height: 100vh;
+        }
+
+        /* ========== 所有内容卡片统一居中宽度 ========== */
+        .section {
+            width: 100%;
+            max-width: 1100px;
+            background: #ffffff;
+            padding: 40px 48px;
+            margin: 16px 0;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.2s;
+            scroll-margin-top: 20px;
+        }
+        .section:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        /* ========== 特殊背景章节（继承宽度，单独样式） ========== */
+        .section-cover {
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 40%, #24243e 100%);
+            color: #e2e8f0;
+            text-align: center;
+            padding: 80px 48px;
+        }
+        .section-cover h1 {
+            font-size: 2.8em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+        .section-cover .subtitle {
+            font-size: 1.3em;
+            color: #94a3b8;
+        }
+        .section-cover .cover-meta {
+            margin-top: 32px;
+            color: #64748b;
+            font-size: 0.95em;
+        }
+
+        .section-chapter {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e2e8f0;
+            text-align: center;
+            padding: 60px 48px;
+        }
+        .section-chapter .chapter-num {
+            font-size: 4em;
+            font-weight: 900;
+            color: rgba(99, 102, 241, 0.2);
+            margin-bottom: 8px;
+        }
+        .section-chapter .chapter-title {
+            font-size: 2.6em;
+            font-weight: 800;
+            color: #f1f5f9;
+        }
+        .section-chapter .chapter-desc {
+            font-size: 1.1em;
+            color: #94a3b8;
+            max-width: 700px;
+            margin: 16px auto 0;
+        }
+
+        .section-end {
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 40%, #24243e 100%);
+            color: #e2e8f0;
+            text-align: center;
+            padding: 80px 48px;
+        }
+        .section-end h1 {
+            font-size: 3.6em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .section-end .subtitle {
+            font-size: 1.2em;
+            color: #94a3b8;
+            margin-top: 12px;
+        }
+        .section-end .end-meta {
+            margin-top: 40px;
+            color: #475569;
+            font-size: 0.95em;
+        }
+
+        /* ========== 内容通用样式 ========== */
+        .section .tag {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .section h2 {
+            font-size: 2em;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        .section h3 {
+            font-size: 1.25em;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 10px;
+        }
+        .section p,
+        .section li {
+            font-size: 1em;
+            line-height: 1.75;
+            color: #334155;
+        }
+        .section .sub-desc {
+            color: #64748b;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+
+        /* ========== 卡片网格 ========== */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 16px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 16px;
+        }
+        .card {
+            background: rgba(241, 245, 249, 0.6);
+            border: 1px solid #e9edf2;
+            border-radius: 12px;
+            padding: 20px 24px;
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            border-color: #c7d2fe;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.06);
+        }
+        .card h4 {
+            font-size: 1.05em;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        .card p,
+        .card li {
+            font-size: 0.95em;
+            color: #475569;
+        }
+        .card ul {
+            padding-left: 18px;
+            margin-top: 4px;
+        }
+        .card ul li {
+            margin-bottom: 4px;
+        }
+        .card.border-green {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        .card.border-orange {
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+        .card.border-blue {
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .card.border-purple {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* ========== 代码块 ========== */
+        .code-block {
+            background: #1e1e2e;
+            border: 1px solid #313244;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            overflow-x: auto;
+            font-size: 0.85em;
+            line-height: 1.7;
+        }
+        .code-block .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #313244;
+            font-size: 0.85em;
+            color: #6c7086;
+        }
+        .code-block .code-header .lang {
+            color: #a6adc8;
+            font-weight: 600;
+        }
+        .code-block pre {
+            margin: 0;
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+            color: #cdd6f4;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .code-block .kw {
+            color: #cba6f7;
+        }
+        .code-block .fn {
+            color: #89b4fa;
+        }
+        .code-block .str {
+            color: #a6e3a1;
+        }
+        .code-block .num {
+            color: #fab387;
+        }
+        .code-block .cm {
+            color: #6c7086;
+            font-style: italic;
+        }
+        .code-block .ty {
+            color: #f38ba8;
+        }
+        .code-block .op {
+            color: #89dceb;
+        }
+        .code-block .pp {
+            color: #f9e2af;
+        }
+
+        /* ========== 提示框 ========== */
+        .info-box {
+            background: rgba(56, 189, 248, 0.07);
+            border-left: 4px solid #38bdf8;
+            padding: 14px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .info-box p {
+            color: #0c4a6e;
+            font-size: 0.98em;
+        }
+        .highlight-box {
+            background: rgba(249, 115, 22, 0.07);
+            border-left: 4px solid #f97316;
+            padding: 14px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .highlight-box p {
+            color: #9a3412;
+            font-size: 0.98em;
+        }
+        .success-box {
+            background: rgba(34, 197, 94, 0.07);
+            border-left: 4px solid #22c55e;
+            padding: 14px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+        .success-box p {
+            color: #14532d;
+            font-size: 0.98em;
+        }
+
+        /* ========== 列表 ========== */
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+        }
+        .bullet-list li {
+            padding: 6px 0 6px 26px;
+            position: relative;
+            font-size: 0.98em;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        .bullet-list li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #818cf8;
+            font-weight: 700;
+        }
+        .bullet-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* ========== 流程图 ========== */
+        .flow-diagram {
+            background: rgba(241, 245, 249, 0.5);
+            border: 1px solid #e9edf2;
+            border-radius: 12px;
+            padding: 24px 30px;
+            margin: 16px 0;
+            text-align: center;
+        }
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .flow-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            color: #1e293b;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .flow-box.blue {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: rgba(56, 189, 248, 0.25);
+        }
+        .flow-box.green {
+            background: rgba(34, 197, 94, 0.08);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+        .flow-box.orange {
+            background: rgba(249, 115, 22, 0.08);
+            border-color: rgba(249, 115, 22, 0.2);
+        }
+        .flow-box.purple {
+            background: rgba(168, 85, 247, 0.08);
+            border-color: rgba(168, 85, 247, 0.2);
+        }
+        .flow-arrow {
+            color: #818cf8;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        /* ========== 状态机 ========== */
+        .state-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(241, 245, 249, 0.4);
+            border-radius: 12px;
+        }
+        .state-node {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95em;
+            text-align: center;
+            min-width: 100px;
+        }
+        .state-node.suspended {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid #ef4444;
+            color: #b91c1c;
+        }
+        .state-node.ready {
+            background: rgba(234, 179, 8, 0.1);
+            border: 2px solid #eab308;
+            color: #854d0e;
+        }
+        .state-node.running {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            color: #14532d;
+        }
+        .state-node.terminated {
+            background: rgba(100, 116, 139, 0.1);
+            border: 2px solid #64748b;
+            color: #334155;
+        }
+        .state-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            color: #94a3b8;
+            font-size: 0.8em;
+        }
+        .state-arrow .arrow {
+            font-size: 1.4em;
+            color: #818cf8;
+        }
+
+        /* ========== 表格 ========== */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.92em;
+        }
+        .compare-table th {
+            background: rgba(99, 102, 241, 0.08);
+            color: #1e293b;
+            padding: 12px 14px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+        }
+        .compare-table td {
+            padding: 10px 14px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+        }
+        .compare-table tr:nth-child(even) td {
+            background: rgba(241, 245, 249, 0.3);
+        }
+        .compare-table .highlight {
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        /* ========== SVG 图表容器 ========== */
+        .diagram-svg {
+            display: flex;
+            justify-content: center;
+            margin: 16px 0;
+        }
+        .diagram-svg svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 860px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 200px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main {
+                margin-left: 0;
+                padding: 16px;
+            }
+            .section {
+                padding: 28px 20px;
+                margin: 12px 0;
+            }
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            .section-cover h1 {
+                font-size: 2em;
+            }
+            .section-chapter .chapter-title {
+                font-size: 1.8em;
+            }
+            .state-diagram {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .state-arrow .arrow {
+                transform: rotate(90deg);
+            }
+            .compare-table {
+                font-size: 0.78em;
+            }
+            .compare-table th,
+            .compare-table td {
+                padding: 6px 8px;
+            }
+            .flow-row {
+                flex-direction: column;
+                gap: 6px;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+            .nav-toggle {
+                display: flex !important;
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        /* ========== 移动端汉堡菜单 ========== */
+        .nav-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 200;
+            background: #0f172a;
+            border: none;
+            color: #e2e8f0;
+            font-size: 1.6em;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: background 0.2s;
+        }
+        .nav-toggle:hover {
+            background: #1e293b;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 99;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* ========== 实用工具 ========== */
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .mt-24 {
+            margin-top: 24px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .mb-16 {
+            margin-bottom: 16px;
+        }
+        .text-sm {
+            font-size: 0.9em;
+            color: #64748b;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 移动端菜单按钮 ===== -->
+    <button class="nav-toggle" id="navToggle" aria-label="切换导航">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ===== 左侧导航 ===== -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <h3>⚙️ 任务机制</h3>
+            <small>燃气表嵌入式系统</small>
+        </div>
+        <ul class="nav-list" id="navList">
+            <!-- 由 JS 动态生成 -->
+        </ul>
+    </nav>
+
+    <!-- ===== 主内容 ===== -->
+    <main class="main" id="mainContent">
+        <!-- 所有 section 由 JS 动态渲染 -->
+    </main>
+
+    <script>
+        // ================================================================
+        //  数据：所有章节内容
+        // ================================================================
+        const sectionsData = [{
+            id: 'cover',
+            type: 'cover',
+            content: `
+            <div class="cover-icon" style="font-size:3em;margin-bottom:16px;">⚙️</div>
+            <h1>任务机制讲解</h1>
+            <p class="subtitle">燃气表嵌入式系统 · 从裸机轮询到 RTOS 的演进之路</p>
+            <div class="cover-meta">
+              <p>JimuTask 架构解析 | 传统轮询 vs 链表调度 vs RT-Thread</p>
+              <p style="margin-top:6px;color:#475569;">Jett 2026-08-26</p>
+            </div>
+          `
+        }, {
+            id: 'toc',
+            type: 'normal',
+            tag: '目录',
+            title: '本次讲解内容',
+            content: `
+            <ul class="bullet-list" style="font-size:1.05em;">
+              <li><strong>01</strong> &nbsp; 传统轮询任务架构 — 燃气表原方案</li>
+              <li><strong>02</strong> &nbsp; JIMU 链表调度架构 — 改进方案</li>
+              <li><strong>03</strong> &nbsp; RT-Thread 实时操作系统 — 进阶方向</li>
+              <li><strong>04</strong> &nbsp; 三种架构横向对比与选型建议</li>
+            </ul>
+            <div class="info-box" style="margin-top:24px;">
+              <p>💡 本文档结合燃气表实际代码，讲解三种任务调度机制的核心原理、优缺点及演进逻辑</p>
+            </div>
+          `
+        }, {
+            id: 'ch1',
+            type: 'chapter',
+            chapterNum: '01',
+            title: '传统轮询任务架构',
+            desc: '燃气表原方案：基于 Task[] 标志数组 + 主循环遍历的协作式任务调度，简单可靠但存在效率瓶颈。'
+        }, {
+            id: 'polling-principle',
+            type: 'normal',
+            tag: '01 · 传统轮询',
+            title: '核心原理：标志数组 + 主循环轮询',
+            content: `
+            <div class="grid-2">
+              <div>
+                <h3>设计思路</h3>
+                <ul class="bullet-list">
+                  <li>用 <code style="color:#f38ba8;">uint8_t Task[]</code> 数组的每一位表示一个任务</li>
+                  <li>中断或主循环中调用 <code style="color:#89b4fa;">TaskReady()</code> 置位</li>
+                  <li>主循环依次检查每个 bit，置位则执行对应任务</li>
+                  <li>任务执行完后调用 <code style="color:#89b4fa;">TaskTerminated()</code> 清位</li>
+                </ul>
+              </div>
+              <div>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>TaskReady 置位函数</span></div>
+                  <pre><span class="pp">#define</span> TASK_TYPE_BAN  0
+<span class="pp">#define</span> TASK_TYPE_NOR  1
+
+<span class="kw">void</span> <span class="fn">TaskReady</span>(<span class="ty">uint8_t</span> taskid, <span class="ty">uint8_t</span> type)
+{
+    <span class="ty">uint8_t</span> pos = (taskid - <span class="num">1</span>) >> <span class="num">3</span>;
+    <span class="ty">uint8_t</span> bit = (taskid - <span class="num">1</span>) & <span class="num">0x07</span>;
+
+    <span class="kw">if</span> (type == TASK_TYPE_BAN) {
+        <span class="fn">INTTERRRUPT_DIS</span>();        <span class="cm">/* 关中断 */</span>
+        Task[pos] |= (<span class="num">1</span> << bit);  <span class="cm">/* 读-改-写 */</span>
+        <span class="fn">INTTERRRUPT_EN</span>();         <span class="cm">/* 开中断 */</span>
+    } <span class="kw">else</span> {
+        Task[pos] |= (<span class="num">1</span> << bit);  <span class="cm">/* 中断中无需保护 */</span>
+    }
+}</pre>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'polling-code',
+            type: 'normal',
+            tag: '01 · 传统轮询',
+            title: '任务编号与主循环遍历',
+            content: `
+            <div class="grid-2">
+              <div>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>任务编号定义（节选）</span></div>
+                  <pre><span class="pp">#define</span> TASK_NUM_TIMER4       <span class="num">1</span>
+<span class="pp">#define</span> TASK_NUM_BUZZ         <span class="num">2</span>
+<span class="pp">#define</span> TASK_NUM_KEY          <span class="num">3</span>
+<span class="pp">#define</span> TASK_NUM_PULSE        <span class="num">4</span>
+<span class="pp">#define</span> TASK_NUM_VALVE        <span class="num">8</span>
+<span class="pp">#define</span> TASK_NUM_GPRS_DRIVE  <span class="num">11</span>
+<span class="pp">#define</span> TASK_NUM_IRDA_TRANS  <span class="num">13</span>
+<span class="pp">#define</span> TASK_NUM_DISPLAY      <span class="num">22</span>
+<span class="pp">#define</span> TASK_NUM_RTC_ADJ      <span class="num">35</span>
+<span class="pp">#define</span> TASK_NUM_LED          <span class="num">36</span>
+
+<span class="ty">static uint8_t</span> Task[TASK_NUM_LEN] = {<span class="num">0</span>};</pre>
+                </div>
+              </div>
+              <div>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>主循环（概念代码）</span></div>
+                  <pre><span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>)
+{
+    <span class="fn">SystemInit</span>();
+    <span class="kw">while</span> (<span class="num">1</span>) {
+        <span class="kw">for</span> (<span class="ty">int</span> i = <span class="num">1</span>; i <= MAX_TASK; i++) {
+            <span class="kw">if</span> (<span class="fn">TaskIsReady</span>(i)) {
+                <span class="fn">TaskHandler</span>(i);    <span class="cm">/* 执行任务 */</span>
+                <span class="fn">TaskTerminated</span>(i); <span class="cm">/* 清标志 */</span>
+            }
+        }
+    }
+}</pre>
+                </div>
+                <div class="highlight-box">
+                  <p>⚠️ 主循环每次都要遍历所有任务编号（1~36），即使大部分任务未就绪，也要逐个检查</p>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'polling-race',
+            type: 'normal',
+            tag: '01 · 关键问题',
+            title: '非原子操作的竞争风险',
+            content: `
+            <div class="grid-2">
+              <div>
+                <h3>问题本质</h3>
+                <p style="margin-bottom:12px;"><code style="color:#f38ba8;">Task[pos] |= (1 << bit)</code> 看似一行代码，实际是 <strong style="color:#b91c1c;">读→改→写</strong> 三步操作。</p>
+                <p style="margin-bottom:12px;">如果中断在"读"和"写"之间触发，且中断里也修改了<strong>同一个字节</strong>的其他 bit，就会导致数据竞争。</p>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>竞争场景示意</span></div>
+                  <pre><span class="cm">/* 主循环要置 bit0 */</span>
+Task[0] |= (<span class="num">1</span> << <span class="num">0</span>);
+<span class="cm">/* 中断要置 bit1 */</span>
+Task[0] |= (<span class="num">1</span> << <span class="num">1</span>);</pre>
+                </div>
+              </div>
+              <div>
+                <h3>时间线分析</h3>
+                <div class="flow-diagram" style="text-align:left;padding:20px 24px;">
+                  <p style="color:#b91c1c;margin-bottom:8px;font-weight:600;">❌ 无保护时的灾难场景：</p>
+                  <p style="color:#475569;font-family:monospace;font-size:.9em;line-height:2.2;">
+                    T0: 主循环读 Task[0] = 0x00<br>
+                    T1: 中断触发，读 Task[0] = 0x00<br>
+                    T2: 中断置 bit1，写回 0x02<br>
+                    T3: 中断返回<br>
+                    T4: 主循环置 bit0，写回 0x01<br>
+                    <span style="color:#b91c1c;font-weight:700;">→ bit1 被覆盖！中断置的位凭空消失！</span>
+                  </p>
+                </div>
+                <div class="success-box">
+                  <p>✅ 解决方案：对共享变量的"读-改-写"操作必须关中断保护（临界区），或使用原子指令</p>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'polling-summary',
+            type: 'normal',
+            tag: '01 · 总结',
+            title: '传统轮询架构的优缺点',
+            content: `
+            <div class="grid-3">
+              <div class="card border-green">
+                <h4>✅ 优点</h4>
+                <ul>
+                  <li>实现极其简单，易于理解</li>
+                  <li>无需动态内存分配</li>
+                  <li>无栈切换开销，RAM 占用极小</li>
+                  <li>确定性好，适合功能固定的产品</li>
+                  <li>调试方便，执行流清晰</li>
+                </ul>
+              </div>
+              <div class="card border-orange">
+                <h4>⚠️ 缺点</h4>
+                <ul>
+                  <li>时间复杂度 O(n)，任务多时效率低</li>
+                  <li>任务无优先级，只能顺序执行</li>
+                  <li>共享变量需手动临界保护</li>
+                  <li>扩展性差，新增任务需改遍历逻辑</li>
+                  <li>长任务会阻塞后续任务</li>
+                </ul>
+              </div>
+              <div class="card border-blue">
+                <h4>🔧 适用场景</h4>
+                <ul>
+                  <li>任务数量少（< 20个）</li>
+                  <li>逻辑简单、功能固定的产品</li>
+                  <li>RAM 极其有限的 MCU（< 4KB）</li>
+                  <li>对实时性要求不高的场景</li>
+                  <li>快速原型验证</li>
+                </ul>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'ch2',
+            type: 'chapter',
+            chapterNum: '02',
+            title: 'JIMU 链表调度架构',
+            desc: '改进方案：用就绪链表替代标志数组，任务调度时间复杂度从 O(n) 降至 O(1)，支持挂起/恢复/延迟操作。'
+        }, {
+            id: 'jimu-data',
+            type: 'normal',
+            tag: '02 · JIMU架构',
+            title: '核心数据结构设计',
+            content: `
+            <div class="grid-2">
+              <div>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>jimu_task.c 核心定义</span></div>
+                  <pre><span class="kw">typedef struct</span> JimuTaskStru {
+    sJimuList    list;       <span class="cm">/* 链表节点 */</span>
+    fTaskHandler task_handler; <span class="cm">/* 任务函数 */</span>
+    <span class="kw">void</span>        *arg;      <span class="cm">/* 参数 */</span>
+    <span class="kw">volatile uint16_t</span> status; <span class="cm">/* 状态 */</span>
+} sJimuTask;
+
+<span class="kw">typedef struct</span> {
+    sJimuList list;     <span class="cm">/* 空闲链表 */</span>
+    <span class="ty">uint16_t</span>  used_num;  <span class="cm">/* 已用数量 */</span>
+    <span class="ty">uint16_t</span>  used_peak; <span class="cm">/* 峰值 */</span>
+} sFreeTask;
+
+<span class="cm">/* 全局变量 */</span>
+<span class="kw">static</span> sJimuList  ReadyList;   <span class="cm">/* 就绪链表 */</span>
+<span class="kw">static</span> sFreeTask FreeList;    <span class="cm">/* 空闲链表 */</span>
+<span class="kw">static</span> sJimuTask *CurrExecTask; <span class="cm">/* 当前任务 */</span>
+<span class="kw">static</span> sJimuTask TaskArray[JIMU_TASK_NUM_LIMIT];</pre>
+                </div>
+              </div>
+              <div>
+                <h3>设计要点</h3>
+                <ul class="bullet-list">
+                  <li><strong style="color:#6366f1;">静态数组 + 链表管理</strong>：TaskArray 静态分配，避免动态内存碎片</li>
+                  <li><strong style="color:#6366f1;">双链表结构</strong>：FreeList 管理空闲块，ReadyList 管理就绪任务</li>
+                  <li><strong style="color:#6366f1;">状态机驱动</strong>：SUSPEND / READY / RUNNING 三态切换</li>
+                  <li><strong style="color:#6366f1;">中断安全</strong>：所有链表操作均在 IntLock/IntRestore 保护下</li>
+                </ul>
+                <div class="info-box">
+                  <p>💡 任务创建时从 FreeList 取一个节点，唤醒时插入 ReadyList 尾部，调度器从 ReadyList 头部取任务执行</p>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'jimu-state',
+            type: 'normal',
+            tag: '02 · JIMU架构',
+            title: '任务状态机',
+            content: `
+            <div class="state-diagram">
+              <div class="state-node suspended">挂起态<br><small>SUSPEND</small></div>
+              <div class="state-arrow"><span>Create</span><span class="arrow">→</span></div>
+              <div class="state-node ready">就绪态<br><small>READY</small></div>
+              <div class="state-arrow"><span>Dispatch</span><span class="arrow">→</span></div>
+              <div class="state-node running">运行态<br><small>RUNNING</small></div>
+              <div class="state-arrow"><span>Delete</span><span class="arrow">→</span></div>
+              <div class="state-node terminated">终止态<br><small>TERMINATED</small></div>
+            </div>
+            <div class="grid-2" style="margin-top:8px;">
+              <div class="code-block">
+                <div class="code-header"><span class="lang">C</span><span>唤醒：SUSPEND → READY</span></div>
+                <pre><span class="ty">int16_t</span> <span class="fn">JimuTaskResume</span>(JimuTask task)
+{
+    <span class="ty">uint8_t</span> int_save = <span class="fn">JimuIntLock</span>();
+    <span class="kw">if</span> (task_handle->task_handler == NULL)
+        <span class="kw">return</span> JM_ERR_TASK_INVALID_TASK;
+    <span class="kw">if</span> (task_handle->status & JIMU_TASK_STATUS_SUSPEND) {
+        task_handle->status = JIMU_TASK_STATUS_READY;
+        <span class="fn">JimuListInsertBefore</span>(&ReadyList, &task_handle->list);
+    }
+    <span class="fn">JimuIntRestore</span>(int_save);
+    <span class="kw">return</span> JM_OK;
+}</pre>
+              </div>
+              <div class="code-block">
+                <div class="code-header"><span class="lang">C</span><span>挂起：READY → SUSPEND</span></div>
+                <pre><span class="ty">int16_t</span> <span class="fn">JimuTaskSuspend</span>(JimuTask task)
+{
+    <span class="ty">uint8_t</span> int_save = <span class="fn">JimuIntLock</span>();
+    <span class="kw">if</span> (task_handle->status & JIMU_TASK_STATUS_READY) {
+        <span class="fn">JimuListRemove</span>(&task_handle->list);
+    }
+    task_handle->status = JIMU_TASK_STATUS_SUSPEND;
+    <span class="fn">JimuIntRestore</span>(int_save);
+    <span class="kw">return</span> JM_OK;
+}</pre>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'jimu-scheduler',
+            type: 'normal',
+            tag: '02 · JIMU架构',
+            title: '调度器主循环',
+            content: `
+            <div class="grid-2">
+              <div class="code-block" style="font-size:.82em;">
+                <div class="code-header"><span class="lang">C</span><span>JimuTaskDispatchStart 核心循环</span></div>
+                <pre><span class="cm">/* 任务调度启动 */</span>
+<span class="kw">void</span> <span class="fn">JimuTaskDispatchStart</span>(<span class="kw">void</span>)
+{
+    (<span class="kw">void</span>)<span class="fn">JimuIntUnlock</span>();
+    <span class="kw">while</span> (<span class="num">1</span>) {
+        int_save = <span class="fn">JimuIntLock</span>();
+
+        <span class="cm">/* 没有就绪任务则试图进入低功耗 */</span>
+        <span class="kw">if</span> (<span class="fn">JimuListIsEmpty</span>(&ReadyList)) {
+            CurrExecTask = NULL;
+            <span class="kw">if</span> (<span class="fn">HalNeedCpuRun</span>() == <span class="num">0</span>) {
+                <span class="fn">JimuBusyWdgFeed</span>(...);
+            }
+        } <span class="kw">else</span> {
+            <span class="cm">/* 取就绪队列的第一个任务 */</span>
+            CurrExecTask = <span class="fn">JIMU_LIST_ENTRY</span>(
+                ReadyList.next, sJimuTask, list);
+            <span class="cm">/* 将任务从就绪队列取下 */</span>
+            <span class="fn">JimuListRemove</span>(&CurrExecTask->list);
+            CurrExecTask->status = RUNNING;
+
+            <span class="fn">JimuIntRestore</span>(int_save);
+            <span class="cm">/* 执行任务 */</span>
+            CurrExecTask->task_handler(CurrExecTask->arg);
+
+            int_save = <span class="fn">JimuIntLock</span>();
+            <span class="cm">/* 被挂起或被删除，不需要加回就绪列表 */</span>
+            <span class="kw">if</span> (CurrExecTask->status & RUNNING) {
+                <span class="fn">JimuListInsertBefore</span>(&ReadyList, &CurrExecTask->list);
+                CurrExecTask->status = READY;
+            }
+        }
+        <span class="fn">JimuIntRestore</span>(int_save);
+        <span class="cm">/* 执行延迟操作 */</span>
+        <span class="fn">TaskDelayedWorkProcess</span>();
+    }
+}</pre>
+              </div>
+              <div>
+                <h3>调度流程</h3>
+                <div class="flow-diagram" style="text-align:center;padding:20px 24px;">
+                  <div class="flow-box blue" style="display:inline-block;">① 关中断，检查就绪链表</div>
+                  <div class="flow-arrow" style="margin:6px 0;">↓</div>
+                  <div class="flow-box green" style="display:inline-block;">② 取队首任务（O(1) 操作）</div>
+                  <div class="flow-arrow" style="margin:6px 0;">↓</div>
+                  <div class="flow-box orange" style="display:inline-block;">③ 开中断，执行任务函数</div>
+                  <div class="flow-arrow" style="margin:6px 0;">↓</div>
+                  <div class="flow-box blue" style="display:inline-block;">④ 关中断，任务放回队尾</div>
+                  <div class="flow-arrow" style="margin:6px 0;">↓</div>
+                  <div class="flow-box purple" style="display:inline-block;">⑤ 处理延迟操作队列</div>
+                  <div class="flow-arrow" style="margin:6px 0;">↓</div>
+                  <div class="flow-box green" style="display:inline-block;">⑥ 循环回到 ①</div>
+                </div>
+                <div class="success-box">
+                  <p>✅ 时间复杂度 O(1)：不需要遍历所有任务，直接从链表头取即可</p>
+                </div>
+                <div class="info-box">
+                  <p>💡 空闲时自动进入低功耗（WFI），有延迟操作机制实现"执行完再处理"的异步模式</p>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'jimu-delayed',
+            type: 'normal',
+            tag: '02 · JIMU架构',
+            title: '延迟操作队列（Delayed Work）',
+            content: `
+            <div class="grid-2">
+              <div>
+                <h3>设计目的</h3>
+                <ul class="bullet-list">
+                  <li>某些操作不能在当前上下文立即执行（如中断中不能删任务）</li>
+                  <li>将操作"延迟"到调度器安全上下文中执行</li>
+                  <li>类似 Linux 的 workqueue / RT-Thread 的 workqueue</li>
+                </ul>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>提交延迟操作</span></div>
+                  <pre><span class="ty">int16_t</span> <span class="fn">JimuTaskDelayedWorkPost</span>(
+    fTaskDelayHandler handler, <span class="kw">void</span> *arg)
+{
+    int_save = <span class="fn">JimuIntLock</span>();
+    <span class="kw">for</span> (i = <span class="num">0</span>; i < NUM; i++) {
+        <span class="kw">if</span> (work[i].handler == NULL) {
+            work[i].handler = handler;
+            work[i].arg = arg;
+            DelayedWork.post_flag = <span class="num">1</span>;
+            <span class="kw">break</span>;
+        }
+    }
+    <span class="fn">JimuIntRestore</span>(int_save);
+}</pre>
+                </div>
+              </div>
+              <div>
+                <h3>执行时机</h3>
+                <p style="color:#475569;margin-bottom:12px;">每次调度循环末尾，检查 post_flag，若置位则遍历执行所有已注册的延迟操作。</p>
+                <div class="code-block">
+                  <div class="code-header"><span class="lang">C</span><span>TaskDelayedWorkProcess</span></div>
+                  <pre><span class="kw">static void</span> <span class="fn">TaskDelayedWorkProcess</span>()
+{
+    <span class="kw">while</span> (DelayedWork.post_flag != <span class="num">0</span>) {
+        DelayedWork.post_flag = <span class="num">0</span>;
+        <span class="kw">for</span> (i = <span class="num">0</span>; i < NUM; i++) {
+            <span class="kw">if</span> (work[i].handler != NULL) {
+                do_work = work[i];
+                work[i].handler = NULL;
+                do_work.handler(do_work.arg);
+            }
+        }
+    }
+}</pre>
+                </div>
+                <div class="highlight-box">
+                  <p>⚠️ 注意：work_handler 在执行前被置 NULL，所以延迟操作<strong>只执行一次</strong>，如需重复执行需再次 Post</p>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'ch3',
+            type: 'chapter',
+            chapterNum: '03',
+            title: 'RT-Thread 实时操作系统',
+            desc: '进阶方向：完整 RTOS 提供多优先级抢占式调度、丰富 IPC 机制、可扩展组件生态，适合复杂燃气表产品。'
+        }, {
+            id: 'rtt-state',
+            type: 'normal',
+            tag: '03 · RT-Thread',
+            title: '任务状态模型',
+            content: `
+            <div class="grid-2">
+              <div>
+                <h3>四种核心状态</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                  <div class="state-node running" style="text-align:left;padding:14px 18px;">
+                    <strong>运行态 Running</strong>
+                    <p style="font-size:.85em;color:#475569;margin-top:2px;">CPU 当前正在执行，同一时刻仅一个</p>
+                  </div>
+                  <div class="state-node ready" style="text-align:left;padding:14px 18px;">
+                    <strong>就绪态 Ready</strong>
+                    <p style="font-size:.85em;color:#475569;margin-top:2px;">条件满足等待调度，优先级最高者先运行</p>
+                  </div>
+                  <div style="background:rgba(249,115,22,0.08);border:2px solid #f97316;color:#9a3412;border-radius:10px;padding:14px 18px;text-align:left;">
+                    <strong>阻塞态 Blocked</strong>
+                    <p style="font-size:.85em;color:#475569;margin-top:2px;">等待事件（延时/信号量/队列/互斥锁）</p>
+                  </div>
+                  <div class="state-node suspended" style="text-align:left;padding:14px 18px;">
+                    <strong>挂起态 Suspended</strong>
+                    <p style="font-size:.85em;color:#475569;margin-top:2px;">手动挂起，事件到来也不执行，需手动恢复</p>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:-28px;">
+                <h3 style="text-align:center;">状态转换图</h3>
+                <div class="diagram-svg">
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="none" version="1.1" width="485" height="424" viewBox="0 0 485 424"><rect x="185" y="363" width="115" height="61" rx="10" fill="#22C55E" fill-opacity="0.11999999731779099"/><rect x="186" y="364" width="113" height="59" rx="9" fill-opacity="0" stroke-opacity="1" stroke="#22C55E" fill="none" stroke-width="2"/><g><path d="M212.8240001,393.648L212.8240001,390.0319996L214.3600001,390.0319996C215.8800001,390.0319996,216.7120004,390.4639997,216.7120004,391.7439995C216.7120004,393.007999,215.8800001,393.648,214.3600001,393.648L212.8240001,393.648ZM216.9040003,400L219.544001,400L216.7760005,395.152C218.1360006,394.624,219.032001,393.52,219.032001,391.7439995C219.032001,389.0239992,217.0640001,388.1439991,214.5680003,388.1439991L210.4560001,388.1439991L210.4560001,400L212.8240001,400L212.8240001,395.52L214.4720001,395.52L216.9040003,400ZM223.848001,400.224001C225.080002,400.224001,225.928001,399.615999,226.696001,398.704L226.760002,398.704L226.936001,400L228.856001,400L228.856001,391.04L226.504002,391.04L226.504002,397.087999C225.89600000000002,397.888,225.416,398.20799999999997,224.696001,398.20799999999997C223.816001,398.20799999999997,223.416,397.728,223.416,396.335999L223.416,391.04L221.080001,391.04L221.080001,396.624C221.080001,398.879999,221.912001,400.224001,223.848001,400.224001ZM231.368,400L233.720001,400L233.720001,393.84C234.375999,393.184,234.856001,392.832,235.576,392.832C236.45600100000001,392.832,236.84,393.312,236.84,394.704L236.84,400L239.192001,400L239.192001,394.416C239.192001,392.16,238.360001,390.816,236.424,390.816C235.208,390.816,234.296001,391.4559994,233.512001,392.223999L233.464001,392.223999L233.288,391.04L231.368,391.04L231.368,400ZM241.624001,400L243.976002,400L243.976002,393.84C244.632,393.184,245.112,392.832,245.832001,392.832C246.71200199999998,392.832,247.096001,393.312,247.096001,394.704L247.096001,400L249.448002,400L249.448002,394.416C249.448002,392.16,248.61600099999998,390.816,246.68,390.816C245.464001,390.816,244.55200200000002,391.4559994,243.768002,392.223999L243.720001,392.223999L243.544003,391.04L241.624001,391.04L241.624001,400ZM251.880001,400L254.232002,400L254.232002,391.04L251.880001,391.04L251.880001,400ZM253.064003,389.5839996C253.864002,389.5839996,254.424,389.0879993,254.424,388.3039999C254.424,387.5359993,253.864002,387.0239992,253.064003,387.0239992C252.232002,387.0239992,251.704002,387.5359993,251.704002,388.3039999C251.704002,389.0879993,252.232002,389.5839996,253.064003,389.5839996ZM256.744003,400L259.096004,400L259.096004,393.84C259.752003,393.184,260.232002,392.832,260.952003,392.832C261.832005,392.832,262.216003,393.312,262.216003,394.704L262.216003,400L264.56800499999997,400L264.56800499999997,394.416C264.56800499999997,392.16,263.736004,390.816,261.800003,390.816C260.584003,390.816,259.672005,391.4559994,258.888004,392.223999L258.840004,392.223999L258.664005,391.04L256.744003,391.04L256.744003,400ZM270.152004,403.888C273.144005,403.888,275.032005,402.512001,275.032005,400.704C275.032005,399.136,273.848007,398.464001,271.688004,398.464001L270.152004,398.464001C269.112003,398.464001,268.744003,398.20799999999997,268.744003,397.743999C268.744003,397.36,268.904003,397.168,269.128006,396.96C269.528004,397.104,269.944004,397.168,270.280003,397.168C272.216003,397.168,273.752007,396.16,273.752007,394.128C273.752007,393.568,273.576004,393.072,273.352005,392.76800000000003L274.872002,392.76800000000003L274.872002,391.04L271.656006,391.04C271.272003,390.9119997,270.808002,390.816,270.280003,390.816C268.392006,390.816,266.680004,391.9519997,266.680004,394.048C266.680004,395.104,267.256004,395.952,267.880005,396.4L267.880005,396.464C267.336002,396.848,266.888004,397.472,266.888004,398.128C266.888004,398.879999,267.224003,399.344,267.704002,399.648001L267.704002,399.728001C266.856003,400.191999,266.42400399999997,400.832001,266.42400399999997,401.584C266.42400399999997,403.167999,268.040005,403.888,270.152004,403.888ZM270.280003,395.712C269.512005,395.712,268.888004,395.12,268.888004,394.048C268.888004,393.007999,269.496002,392.431999,270.280003,392.431999C271.080006,392.431999,271.704002,393.007999,271.704002,394.048C271.704002,395.12,271.080006,395.712,270.280003,395.712ZM270.504005,402.384001C269.208004,402.384001,268.37600299999997,401.968,268.37600299999997,401.23199999999997C268.37600299999997,400.848,268.552006,400.496,268.952003,400.176001C269.288006,400.256001,269.656006,400.288,270.184006,400.288L271.288002,400.288C272.248005,400.288,272.776005,400.464001,272.776005,401.104C272.776005,401.79200000000003,271.864006,402.384001,270.504005,402.384001Z" fill="#14532D" fill-opacity="1"/></g><path d="M226,362L226,62L228,62L228,362L226,362ZM227.70710689,61.29289335L234.0710669,67.6568556Q234.1407104,67.7264991,234.1954288,67.8083916Q234.2501478,67.8902841,234.2878389,67.9812784Q234.3255296,68.0722723,234.3447447,68.1688714Q234.3639593,68.2654705,234.3639593,68.3639622Q234.3639593,68.4624529,234.3447447,68.5590515Q234.3255296,68.6556506,234.2878389,68.746645Q234.2501478,68.8376389,234.1954288,68.9195318Q234.1407099,69.0014248,234.0710664,69.0710692Q234.0014219,69.1407127,233.919529,69.1954317Q233.837636,69.25015020000001,233.7466421,69.2878413Q233.6556478,69.325532,233.5590491,69.3447471Q233.46245,69.3639622,233.3639593,69.3639622Q233.2654676,69.3639622,233.1688685,69.3447471Q233.0722694,69.325532,232.9812756,69.2878413Q232.8902812,69.2501497,232.8083887,69.1954312Q232.72649619999999,69.1407123,232.6568527,69.0710688L226.29289311,62.70710665Q226.2232492,62.63746268,226.16853034,62.55557007Q226.11381149,62.47367743,226.0761205,62.38268322Q226.0384295,62.29168904,226.01921487,62.19509013Q226.00000012,62.098491222,226.00000012,61.99999982118607Q226.00000012,61.901508428,226.01921487,61.80490953Q226.03842962,61.70831063,226.07612062,61.61731645Q226.11381161,61.52632225,226.16853058,61.44442964Q226.22324944,61.36253703,226.29289335,61.29289311Q226.36253732,61.2232492,226.44442993,61.16853034Q226.52632257,61.11381149,226.61731678,61.0761205Q226.70831096,61.0384295,226.80490987,61.01921487Q226.901508778,61.00000012,227.00000017881393,61.00000012Q227.098491572,61.00000012,227.19509047,61.01921487Q227.29168937,61.03842962,227.38268355,61.07612062Q227.47367775,61.11381161,227.55557036,61.16853058Q227.63746297,61.223249440000004,227.70710689,61.29289335ZM227.70710689,62.70710665L221.3431473,69.0710688Q221.27350380000001,69.1407123,221.1916113,69.1954312Q221.1097193,69.2501497,221.0187249,69.2878413Q220.927731,69.325532,220.8311319,69.3447471Q220.7345333,69.3639622,220.6360412,69.3639622Q220.53755,69.3639622,220.4409513,69.3447471Q220.3443522,69.325532,220.2533579,69.2878413Q220.162364,69.25015020000001,220.080471,69.1954312Q219.9985781,69.1407127,219.9289336,69.0710692Q219.8592901,69.0014248,219.8045712,68.9195318Q219.7498522,68.8376389,219.7121611,68.746645Q219.6744704,68.6556506,219.6552553,68.559052Q219.6360407,68.4624529,219.6360407,68.3639622Q219.6360407,68.2654705,219.6552553,68.1688714Q219.6744704,68.0722723,219.7121611,67.9812779Q219.7498522,67.8902836,219.8045712,67.8083916Q219.8592896,67.7264991,219.9289331,67.6568556L226.29289311,61.29289335Q226.36253703,61.223249440000004,226.44442964,61.16853052Q226.52632225,61.11381161,226.61731642,61.07612062Q226.7083106,61.03842962,226.80490951,61.01921487Q226.901508428,61.00000012,226.99999982118607,61.00000012Q227.098491222,61.00000012,227.19509013,61.01921481Q227.29168904,61.0384295,227.38268322,61.07612056Q227.47367743,61.11381149,227.55557007,61.1685304Q227.63746268,61.2232492,227.70710665,61.29289311Q227.77675056,61.36253703,227.83146948,61.44442964Q227.88618839,61.52632225,227.92387938,61.61731642Q227.96157038,61.7083106,227.98078513,61.80490951Q227.99999988,61.901508428,227.99999988,61.99999982118607Q227.99999988,62.098491222,227.98078519,62.19509013Q227.9615705,62.29168904,227.92387944,62.38268322Q227.88618851,62.47367743,227.8314696,62.55557007Q227.7767508,62.63746268,227.70710689,62.70710665Z" fill="#818CF8" fill-opacity="1"/><path d="M258,61L258,362L256,362L256,61L258,61ZM256.29289359,362.70709L249.9289336,356.34314Q249.8592901,356.2735,249.8045712,356.19159Q249.7498522,356.10968,249.7121611,356.01868Q249.6744704,355.92767,249.6552553,355.83109Q249.6360407,355.7345,249.6360407,355.63602Q249.6360407,355.53751,249.6552553,355.44092Q249.6744704,355.3443,249.7121611,355.25333Q249.7498522,355.16235,249.8045712,355.08044Q249.8592896,354.9986,249.9289331,354.92896Q249.9985771,354.85928,250.0804701,354.80457Q250.1623631,354.74982,250.2533569,354.71216Q250.3443513,354.67447,250.4409504,354.65527Q250.537549,354.63605,250.6360407,354.63605Q250.7345324,354.63605,250.8311315,354.65524Q250.9277306,354.67447,251.0187244,354.71216Q251.1097183,354.74982,251.1916113,354.80457Q251.2735033,354.85928,251.3431468,354.92896L257.70710641,361.29291Q257.77675033,361.36255,257.8314693,361.44443Q257.88618821,361.52631,257.92387927,361.61728Q257.96157038,361.70825,257.98078513,361.80484Q257.99999988,361.90146,258,361.99997Q258,362.09845,257.98078531,362.19507Q257.96157062,362.29163,257.92387968,362.38263Q257.88618875,362.47363,257.83146989,362.55554Q257.77675104,362.63745,257.70710719,362.70709Q257.63746321,362.77673,257.55557066,362.83145Q257.47367805,362.88617,257.3826839,362.92383Q257.29168975,362.96152,257.19509085,362.98074Q257.098491944,362.99994,257.00000055134296,362.99997Q256.901509143,362.99994,256.80491021,362.98074Q256.70831129,362.96152,256.61731708,362.92383Q256.52632287,362.88617,256.44443023,362.83145Q256.36253762,362.77673,256.29289359,362.70709ZM256.29289359,361.29291L262.6568532,354.92896Q262.7264967,354.85928,262.8083892,354.80457Q262.8902817,354.74982,262.981276,354.71216Q263.0722699,354.67447,263.168869,354.65527Q263.2654676,354.63605,263.3639598,354.63605Q263.462451,354.63605,263.5590496,354.65524Q263.65564870000003,354.67447,263.74664310000003,354.71216Q263.8376369,354.74982,263.9195299,354.80457Q264.0014229,354.85928,264.0710669,354.92896Q264.1407104,354.9986,264.1954288,355.08044Q264.2501478,355.16235,264.2878389,355.25333Q264.3255296,355.3443,264.3447447,355.44092Q264.3639593,355.53751,264.3639593,355.63602Q264.3639593,355.7345,264.3447447,355.83109Q264.3255296,355.92767,264.2878389,356.01868Q264.2501478,356.10968,264.1954288,356.19159Q264.1407099,356.2735,264.0710664,356.34314L257.70710641,362.70709Q257.63746238,362.77673,257.55556977,362.83145Q257.4736771,362.88617,257.38268289,362.92383Q257.29168868,362.96152,257.19508977,362.98074Q257.098490857,362.99994,256.99999944865704,362.99997Q256.901508056,362.99994,256.80490914,362.98074Q256.70831025,362.96152,256.61731607,362.92383Q256.52632192,362.88617,256.44442934,362.83145Q256.36253679,362.77673,256.29289281,362.70709Q256.22324896,362.63745,256.16853011,362.55554Q256.11381125,362.47363,256.07612032,362.38263Q256.03842938,362.29163,256.01921469,362.19507Q256,362.09845,256,362Q256.00000012,361.90149,256.01921487,361.80487Q256.03842962,361.70828,256.07612073,361.61731Q256.11381179,361.52631,256.16853076,361.44443Q256.22324967,361.36255,256.29289359,361.29291Z" fill="#818CF8" fill-opacity="1"/><path d="M431.96928,238.4307132L426.37743,231.37868249Q426.25383999999997,231.22282362,426.08002,231.12612331Q425.90619,231.02942288,425.7086,231.00660276Q425.66062999999997,231.00106287,425.61234,231.00017071Q425.43843,230.9969569,425.27365,231.05266058Q425.10886,231.10836411,424.97256,231.21644109L417.92052,236.8083Q417.84335,236.8694944,417.77959,236.9445686Q417.71584,237.01964279999999,417.66795,237.1057124Q417.62007,237.191782,417.5899,237.2855387Q417.55971999999997,237.3792953,417.54843,237.4771366Q417.53712,237.5749774,417.54514,237.6731429Q417.55313,237.7713079,417.58014000000003,237.8660259Q417.60715,237.960743,417.65211,238.0483727Q417.69707,238.1360025,417.75828,238.2131763Q417.88187,238.3690348,418.05569,238.4657359Q418.22951,238.5624361,418.42710999999997,238.5852566Q418.62472,238.6080775,418.81601,238.5535421Q419.00731,238.4990067,419.16315,238.3754177L424.30699,234.2966461Q417.60354,286.682331,383.742859,327.665619Q349.518005,369.08969,298.69122142,385.59023L299.30877858,387.49249Q350.689125,370.81224,385.284691,328.939484Q419.53187,287.488411,426.29766,234.4970515L430.40218,239.6733479Q430.46338000000003,239.7505217,430.53845,239.8142738Q430.61352999999997,239.878026,430.69957999999997,239.9259071Q430.78566,239.9737883,430.87943,240.0039577Q430.97318,240.0341282,431.07101,240.0454273Q431.16885,240.0567265,431.26701,240.0487204Q431.36517000000003,240.0407143,431.4599,240.0137119Q431.55461,239.9867086,431.64224,239.9417458Q431.72987,239.8967834,431.80705,239.8355894Q431.96292,239.7120028,432.05962,239.5381799Q432.15630999999996,239.364356,432.17912,239.16675850000001Q432.20195,238.9691582,432.14742,238.7778664Q432.09288000000004,238.5865746,431.96928,238.4307132Z" fill-rule="evenodd" fill="#818CF8" fill-opacity="1"/><path d="M59.40109408,241.30205920156249L55.5160141,246.6452188015625Q55.4580927,246.7248783015625,55.3857436,246.7917070015625Q55.3133945,246.8585358015625,55.2293978,246.9099655015625Q55.145401,246.9613962015625,55.0529842,246.9954519015625Q54.960567499999996,247.0295067015625,54.8632827,247.0448780015625Q54.7659984,247.0602493015625,54.6675844,247.0563459015625Q54.5691705,247.0524425015625,54.4734087,247.0294142015625Q54.3776474,247.0063858015625,54.288218,246.9651184015625Q54.1987891,246.9238510015625,54.1191292,246.8659296015625Q54.0394697,246.8080082015625,53.972641,246.7356582015625Q53.9058123,246.6633081015625,53.854382,246.5793114015625Q53.8029518,246.4953146015625,53.768897100000004,246.4028978015625Q53.7348413,246.3104815015625,53.71947,246.2131972015625Q53.7040987,246.1159124015625,53.7080026,246.0174980015625Q53.711906400000004,245.9190836015625,53.7349343,245.8233223015625Q53.7579622,245.7275610015625,53.799229600000004,245.6381321015625Q53.840497,245.5487041015625,53.8984184,245.4690447015625L59.1912024,238.1898669615625Q59.24912393,238.1102073815625,59.32147336,238.0433783515625Q59.39382279,237.9765493315625,59.47781968,237.9251190415625Q59.56181663,237.8736888215625,59.65423313,237.8396337015625Q59.74664962,237.8055785915625,59.84393415,237.7902074415625Q59.941218704,237.7748363015625,60.039632719,237.7787398715625Q60.13804674,237.7826433215625,60.23380822,237.8056714515625Q60.3295697,237.8286995915625,60.4189986,237.8699673415625Q60.5084275,237.9112350315625,60.58808714,237.9691565015625L60.58823901,237.9692669515625L67.8672638,243.2619433015625Q67.9469233,243.3198643015625,68.013752,243.3922138015625Q68.0805807,243.4645634015625,68.1320114,243.5485601015625Q68.1834412,243.6325569015625,68.2174969,243.7249737015625Q68.2515516,243.8173904015625,68.266923,243.9146748015625Q68.28229329999999,244.0119591015625,68.27838990000001,244.1103735015625Q68.2744865,244.2087870015625,68.2514582,244.3045483015625Q68.2284298,244.4003096015625,68.1871624,244.4897389015625Q68.145895,244.5791683015625,68.0879736,244.6588283015625Q68.0300522,244.7384877015625,67.9577022,244.8053164015625Q67.8853521,244.8721447015625,67.8013554,244.9235749015625Q67.7173586,244.9750051015625,67.6249418,245.0090604015625Q67.5325255,245.0431156015625,67.43524120000001,245.0584869015625Q67.3379564,245.0738578015625,67.2395425,245.0699544015625Q67.1411285,245.0660505015625,67.0453672,245.0430231015625Q66.9496055,245.0199947015625,66.860177,244.9787269015625Q66.7707481,244.9374595015625,66.6910887,244.8795381015625L61.3817142,241.0190206015625Q69.90147400000001,290.9205171015625,103.166698,329.5973971015625Q136.913803,368.8345341015625,185.86455,384.7238741015625L185.24707,386.6261641015625Q135.763046,370.5637241015625,101.650391,330.9015501015625Q68.0049028,291.7825551015625,59.40109408,241.30205920156249Z" fill-rule="evenodd" fill="#818CF8" fill-opacity="1"/><g><path d="M96.50400020000001,317.143999C97.4960003,317.832001,98.6000004,318.856001,99.0960002,319.591999L100.2640004,318.632C99.7840004,317.959999,98.7760005,317.096001,97.8640003,316.472L103.416,316.472L103.416,318.648001C103.416,318.872,103.352,318.92,103.064,318.936001C102.7920008,318.952,101.8320007,318.952,100.8720002,318.92C101.0799999,319.30400099999997,101.3360004,319.912001,101.4320002,320.344C102.69600009999999,320.344,103.592001,320.312,104.184001,320.104C104.808001,319.879999,104.984,319.48,104.984,318.68L104.984,316.472L107.864,316.472L107.864,315.16L104.984,315.16L104.984,313.959999L108.312,313.959999L108.312,312.648L101.7680006,312.648L101.7680006,311.448L106.808001,311.448L106.808001,310.184L101.7680006,310.184L101.7680006,309.224L101.6720009,309.224C101.9920006,308.8719997,102.3120003,308.4559994,102.6000004,308.0079994L103.464001,308.0079994C103.928,308.6159992,104.376,309.3359995,104.552001,309.8319998L105.848001,309.2879992C105.70400000000001,308.9199991,105.400001,308.4559994,105.080001,308.0079994L108.184001,308.0079994L108.184001,306.7599993L103.304001,306.7599993C103.464001,306.4239998,103.608001,306.0879993,103.736,305.7519989L102.2800007,305.3999996C101.96000000000001,306.3119993,101.44800000000001,307.223999,100.8240004,307.9599991L100.8240004,306.7599993L96.9200001,306.7599993C97.0800004,306.4399996,97.224,306.1199989,97.368,305.7839994L95.9120002,305.3999996C95.3840001,306.7759991,94.4560001,308.1839991,93.41600001,309.0799999C93.78400004,309.2719994,94.3920001,309.6879997,94.6800001,309.9279995C95.1920002,309.4159994,95.72,308.7439995,96.2,308.0079994L96.6320002,308.0079994C96.9360001,308.6159992,97.2400002,309.3199997,97.3360004,309.7839994L98.664,309.2559996C98.5680003,308.9199991,98.3600001,308.4559994,98.1360002,308.0079994L100.7760005,308.0079994C100.5200005,308.3119993,100.2480001,308.5839996,99.9600005,308.8239994L100.5840006,309.224L100.2000003,309.224L100.2000003,310.184L95.3360002,310.184L95.3360002,311.448L100.2000003,311.448L100.2000003,312.648L93.73600006,312.648L93.73600006,313.959999L103.416,313.959999L103.416,315.16L94.2800001,315.16L94.2800001,316.472L97.3840003,316.472L96.50400020000001,317.143999ZM115.496,315.864C116.21600000000001,316.728,117.016001,317.927999,117.336,318.712L118.648001,317.959999C118.296001,317.191999,117.464001,316.04,116.728001,315.208L115.496,315.864ZM112.936001,305.5279989C112.264,306.631999,110.84,307.9439993,109.591999,308.7439995C109.832001,309.0639992,110.200001,309.6719999,110.360001,310.0239992C111.799999,309.0479994,113.368,307.5279999,114.360001,306.1039991L112.936001,305.5279989ZM118.584,305.5599995L118.584,307.4639997L115.16,307.4639997L115.16,308.8399992L118.584,308.8399992L118.584,310.5839996L114.232,310.5839996L114.232,311.976L120.808001,311.976L120.808001,313.528L114.408001,313.528L114.408001,314.92L120.808001,314.92L120.808001,318.632C120.808001,318.84,120.728001,318.903999,120.47200000000001,318.92C120.21600000000001,318.936001,119.32,318.936001,118.456001,318.888C118.648001,319.30400099999997,118.85600099999999,319.912001,118.92,320.327999C120.167999,320.327999,121,320.312,121.576,320.087999C122.136002,319.864,122.312,319.464001,122.312,318.648001L122.312,314.92L124.344002,314.92L124.344002,313.528L122.312,313.528L122.312,311.976L124.456001,311.976L124.456001,310.5839996L120.08800099999999,310.5839996L120.08800099999999,308.8399992L123.672001,308.8399992L123.672001,307.4639997L120.08800099999999,307.4639997L120.08800099999999,305.5599995L118.584,305.5599995ZM113.271999,309.0479994C112.360001,310.6639996,110.808001,312.28,109.384001,313.304C109.62400099999999,313.672,110.024,314.488,110.152,314.823999C110.695999,314.375999,111.271999,313.848,111.832001,313.256L111.832001,320.344L113.271999,320.344L113.271999,311.559999C113.768,310.9200001,114.21600000000001,310.2479992,114.584,309.592L113.271999,309.0479994ZM127.12799799999999,316.823999L127.12799799999999,317.944L132.167999,317.944L132.167999,318.79200000000003C132.167999,319.08,132.071999,319.16,131.784,319.176001C131.512001,319.191999,130.55200200000002,319.191999,129.672001,319.16C129.863998,319.496,130.10399999999998,320.040001,130.183998,320.392C131.54399899999999,320.392,132.391998,320.375999,132.936001,320.167999C133.496002,319.959999,133.704002,319.624001,133.704002,318.79200000000003L133.704002,317.944L137.144001,317.944L137.144001,318.648001L138.66400099999998,318.648001L138.66400099999998,315.816L140.344002,315.816L140.344002,314.632L138.66400099999998,314.632L138.66400099999998,312.648L133.704002,312.648L133.704002,311.688L138.408001,311.688L138.408001,308.7119999L133.704002,308.7119999L133.704002,307.8799992L140.00799899999998,307.8799992L140.00799899999998,306.6639996L133.704002,306.6639996L133.704002,305.4959993L132.167999,305.4959993L132.167999,306.6639996L126.023998,306.6639996L126.023998,307.8799992L132.167999,307.8799992L132.167999,308.7119999L127.688,308.7119999L127.688,311.688L132.167999,311.688L132.167999,312.648L127.256001,312.648L127.256001,313.704L132.167999,313.704L132.167999,314.632L125.70399900000001,314.632L125.70399900000001,315.816L132.167999,315.816L132.167999,316.823999L127.12799799999999,316.823999ZM129.144001,309.7039995L132.167999,309.7039995L132.167999,310.6799994L129.144001,310.6799994L129.144001,309.7039995ZM133.704002,309.7039995L136.872002,309.7039995L136.872002,310.6799994L133.704002,310.6799994L133.704002,309.7039995ZM133.704002,313.704L137.144001,313.704L137.144001,314.632L133.704002,314.632L133.704002,313.704ZM133.704002,315.816L137.144001,315.816L137.144001,316.823999L133.704002,316.823999L133.704002,315.816ZM146.05599999999998,313.368L146.05599999999998,314.856L150.55200200000002,314.856L150.55200200000002,320.344L152.071999,320.344L152.071999,314.856L156.344002,314.856L156.344002,313.368L152.071999,313.368L152.071999,310.184L155.608002,310.184L155.608002,308.6959991L152.071999,308.6959991L152.071999,305.6879997L150.55200200000002,305.6879997L150.55200200000002,308.6959991L148.760002,308.6959991C148.952,308.0239992,149.112,307.3359995,149.256001,306.631999L147.799999,306.3279991C147.448002,308.3599997,146.776001,310.4239998,145.863998,311.719999C146.248001,311.879999,146.888,312.247999,147.175999,312.455999C147.576,311.832,147.94400000000002,311.048,148.264,310.184L150.55200200000002,310.184L150.55200200000002,313.368L146.05599999999998,313.368ZM145.112,305.5599995C144.279999,307.9119997,142.888,310.2639999,141.416,311.783999C141.672001,312.136,142.10399999999998,312.952,142.248001,313.32C142.68,312.856,143.096001,312.344,143.495998,311.783999L143.495998,320.327999L144.952,320.327999L144.952,309.4639997C145.560001,308.3439999,146.10399999999998,307.1599998,146.535999,305.9919996L145.112,305.5599995Z" fill="#3D3D3D" fill-opacity="1"/></g><g><path d="M333.7760005,306.3759995C334.6560001,307.0159998,335.7120004,307.9119997,336.368,308.6159992L329.5840001,308.6159992L329.5840001,310.1039991L335.1680002,310.1039991L335.1680002,313.304L330.368,313.304L330.368,314.76L335.1680002,314.76L335.1680002,318.344L328.86400002,318.344L328.86400002,319.816L343.200001,319.816L343.200001,318.344L336.8320007,318.344L336.8320007,314.76L341.68,314.76L341.68,313.304L336.8320007,313.304L336.8320007,310.1039991L342.384001,310.1039991L342.384001,308.6159992L337.2480001,308.6159992L338.048,308.039999C337.3920002,307.2719994,336.0480003,306.2159996,335.0240002,305.5119991L333.7760005,306.3759995ZM345.375999,306.7759991L345.375999,308.1199999L351.6,308.1199999L351.6,306.7759991L345.375999,306.7759991ZM354.192001,305.7679996C354.192001,306.9039993,354.192001,308.0079994,354.16,309.0959997L352.096001,309.0959997L352.096001,310.552L354.112,310.552C353.92,314.12,353.312,317.24,351.23199999999997,319.20799999999997C351.616001,319.431999,352.128,319.959999,352.368,320.327999C354.688,318.087999,355.375999,314.552,355.584,310.552L357.664001,310.552C357.488001,315.96,357.296001,317.992001,356.912001,318.455999C356.752001,318.664,356.576,318.712,356.30400099999997,318.712C355.968,318.712,355.200001,318.712,354.352001,318.632C354.608002,319.048,354.784,319.672001,354.816002,320.104C355.648001,320.152,356.496,320.167999,357.007999,320.104C357.535999,320.024,357.888,319.864,358.240002,319.384001C358.784,318.664,358.960001,316.36,359.168001,309.816C359.168001,309.6079998,359.168001,309.0959997,359.168001,309.0959997L355.648001,309.0959997C355.68,308.0079994,355.69599900000003,306.8879995,355.69599900000003,305.7679996L354.192001,305.7679996ZM345.440001,318.472C345.856001,318.216,346.48,318.024,350.720001,317L350.976,317.944L352.288,317.496C352.016001,316.408,351.312,314.535999,350.704,313.143999L349.488001,313.48C349.76,314.167999,350.063999,314.968,350.32,315.736L346.976,316.472C347.568001,315.112,348.112,313.48,348.496,311.927999L351.888,311.927999L351.888,310.5359993L344.816,310.5359993L344.816,311.927999L346.944,311.927999C346.559999,313.719999,345.936001,315.496,345.712,315.992C345.455999,316.6,345.23199999999997,317,344.959999,317.096001C345.120001,317.464001,345.360001,318.167999,345.440001,318.472ZM362.720001,305.4959993L362.720001,308.6479998L360.768002,308.6479998L360.768002,310.0559998L362.720001,310.0559998L362.720001,313.288C361.919998,313.496,361.183998,313.688,360.560001,313.816L360.976002,315.271999L362.720001,314.776L362.720001,318.552C362.720001,318.775999,362.624001,318.84,362.416,318.856001C362.20799999999997,318.856001,361.52,318.856001,360.816002,318.84C361.007999,319.224001,361.216,319.832001,361.264,320.216C362.368,320.216,363.088001,320.184,363.552002,319.944C364.032001,319.71999900000003,364.20799999999997,319.336,364.20799999999997,318.552L364.20799999999997,314.36L366.080002,313.832L365.903999,312.44L364.20799999999997,312.903999L364.20799999999997,310.0559998L365.903999,310.0559998L365.903999,308.6479998L364.20799999999997,308.6479998L364.20799999999997,305.4959993L362.720001,305.4959993ZM369.84000000000003,305.5759993L369.84000000000003,307.5599995L366.672001,307.5599995L366.672001,308.9359999L369.84000000000003,308.9359999L369.84000000000003,310.9679995L366.144001,310.9679995L366.144001,312.375999L375.248001,312.375999L375.248001,310.9679995L371.391998,310.9679995L371.391998,308.9359999L374.528,308.9359999L374.528,307.5599995L371.391998,307.5599995L371.391998,305.5759993L369.84000000000003,305.5759993ZM369.84000000000003,312.936L369.84000000000003,314.632L366.431999,314.632L366.431999,316.024L369.84000000000003,316.024L369.84000000000003,318.375999L365.375999,318.375999L365.375999,319.816L375.424,319.816L375.424,318.375999L371.391998,318.375999L371.391998,316.024L374.768002,316.024L374.768002,314.632L371.391998,314.632L371.391998,312.936L369.84000000000003,312.936ZM377.439999,312.792C377.391998,315.608,377.216,318.216,376.335999,319.832001C376.688,319.992001,377.344002,320.327999,377.616001,320.52C378.032001,319.672001,378.30400099999997,318.632,378.48,317.464001C379.69599900000003,319.48,381.616001,319.944,384.832001,319.944L391.007999,319.944C391.104,319.48,391.360001,318.79200000000003,391.599998,318.440001C390.400002,318.504,385.79200000000003,318.504,384.816002,318.488001C383.440002,318.488001,382.32,318.408001,381.424,318.104L381.424,315.096L383.888,315.096L383.888,313.76800000000003L381.424,313.76800000000003L381.424,311.671999L384.048,311.671999L384.048,310.3279991L381.119999,310.3279991L381.119999,308.5359993L383.647999,308.5359993L383.647999,307.2079992L381.119999,307.2079992L381.119999,305.5279989L379.712002,305.5279989L379.712002,307.2079992L377.152,307.2079992L377.152,308.5359993L379.712002,308.5359993L379.712002,310.3279991L376.720001,310.3279991L376.720001,311.671999L380.032001,311.671999L380.032001,317.30400099999997C379.472,316.792,379.056,316.072,378.736,315.064C378.784,314.36,378.816002,313.639999,378.832001,312.903999L377.439999,312.792ZM384.736,310.4879999L384.736,315.608C384.736,317.176001,385.216,317.591999,386.832001,317.591999C387.184002,317.591999,389.040001,317.591999,389.408001,317.591999C390.863998,317.591999,391.279999,316.968,391.456001,314.632C391.056,314.535999,390.431999,314.296,390.112,314.056C390.048,315.927999,389.936001,316.23199999999997,389.296001,316.23199999999997C388.863998,316.23199999999997,387.327999,316.23199999999997,387.024002,316.23199999999997C386.30400099999997,316.23199999999997,386.192001,316.152,386.192001,315.608L386.192001,311.816L389.088001,311.816L389.088001,312.23199999999997L390.543999,312.23199999999997L390.543999,306.1999998L384.576,306.1999998L384.576,307.5279999L389.088001,307.5279999L389.088001,310.4879999L384.736,310.4879999Z" fill="#3D3D3D" fill-opacity="1"/></g><rect x="370" y="170" width="115" height="61" rx="10" fill="#EF4444" fill-opacity="0.11999999731779099"/><rect x="371" y="171" width="113" height="59" rx="9" fill-opacity="0" stroke-opacity="1" stroke="#EF4444" fill="none" stroke-width="2"/><g><path d="M388.9920001,207.224001C391.7280002,207.224001,393.3440008,205.576,393.3440008,203.639999C393.3440008,201.927999,392.4000006,201,390.9600005,200.407999L389.4080005,199.783999C388.4000001,199.368,387.5680001,199.063999,387.5680001,198.2159996C387.5680001,197.4319992,388.2080002,196.9679995,389.2480001,196.9679995C390.2400002,196.9679995,391.0240002,197.3359995,391.7760005,197.9439993L392.9760008,196.4719992C392.0160007,195.4959993,390.6400003,194.9359999,389.2480001,194.9359999C386.8640001,194.9359999,385.1520001,196.4399996,385.1520001,198.3599997C385.1520001,200.087999,386.368,201.048,387.5680001,201.528L389.1360002,202.216C390.1920004,202.664,390.9280005,202.936,390.9280005,203.816C390.9280005,204.648,390.2720003,205.17600099999999,389.0400004,205.17600099999999C388,205.17600099999999,386.8640001,204.648,386.0320001,203.864L384.67200005,205.496C385.8240001,206.615999,387.4080002,207.224001,388.9920001,207.224001ZM397.92,207.224001C399.152,207.224001,400,206.615999,400.768002,205.704L400.832001,205.704L401.007999,207L402.928001,207L402.928001,198.04L400.576,198.04L400.576,204.087999C399.968,204.888,399.488001,205.208,398.768001,205.208C397.888,205.208,397.488001,204.728,397.488001,203.335999L397.488001,198.04L395.152,198.04L395.152,203.624C395.152,205.879999,395.984,207.224001,397.92,207.224001ZM408,207.224001C410.32,207.224001,411.568001,205.976,411.568001,204.392C411.568001,202.743999,410.256001,202.136,409.072001,201.688C408.112001,201.336,407.296001,201.096,407.296001,200.44C407.296001,199.927999,407.68,199.576,408.496,199.576C409.152,199.576,409.776001,199.89600000000002,410.416,200.344L411.472,198.9200001C410.736,198.3439999,409.728001,197.816,408.432001,197.816C406.384001,197.816,405.088001,198.9519997,405.088001,200.552C405.088001,202.056,406.352001,202.743999,407.488001,203.176C408.432001,203.544,409.360001,203.848,409.360001,204.52C409.360001,205.07999999999998,408.960001,205.464001,408.064001,205.464001C407.216002,205.464001,406.464001,205.096001,405.664001,204.488L404.592001,205.976C405.488001,206.712,406.800001,207.224001,408,207.224001ZM413.360001,210.440001L415.712002,210.440001L415.712002,207.704L415.632,206.247999C416.30400099999997,206.872,417.072002,207.224001,417.856003,207.224001C419.824001,207.224001,421.664001,205.448,421.664001,202.375999C421.664001,199.624,420.336002,197.816,418.144001,197.816C417.167999,197.816,416.25600099999997,198.3279991,415.504002,198.9679995L415.456001,198.9679995L415.28000099999997,198.04L413.360001,198.04L413.360001,210.440001ZM417.344002,205.288C416.848,205.288,416.288002,205.112,415.712002,204.61599999999999L415.712002,200.664C416.32,200.056,416.864002,199.752,417.472,199.752C418.704002,199.752,419.248001,200.695999,419.248001,202.408C419.248001,204.36,418.400002,205.288,417.344002,205.288ZM427.568001,207.224001C428.672001,207.224001,429.808002,206.84,430.688004,206.232L429.888,204.792C429.232002,205.191999,428.608002,205.4,427.888,205.4C426.544003,205.4,425.584003,204.648,425.392002,203.191999L430.912003,203.191999C430.976002,202.968,431.024002,202.535999,431.024002,202.10399999999998C431.024002,199.608,429.744003,197.816,427.280003,197.816C425.152,197.816,423.104,199.624,423.104,202.52C423.104,205.48,425.056,207.224001,427.568001,207.224001ZM425.344002,201.608C425.536003,200.312,426.368,199.639999,427.312,199.639999C428.480003,199.639999,429.00800300000003,200.407999,429.00800300000003,201.608L425.344002,201.608ZM432.96000300000003,207L435.312004,207L435.312004,200.84C435.968002,200.184,436.448002,199.832,437.168003,199.832C438.048004,199.832,438.432003,200.312,438.432003,201.704L438.432003,207L440.784004,207L440.784004,201.416C440.784004,199.16,439.952003,197.816,438.016003,197.816C436.800003,197.816,435.888004,198.4559994,435.10400400000003,199.223999L435.05600400000003,199.223999L434.880005,198.04L432.96000300000003,198.04L432.96000300000003,207ZM446.368004,207.224001C447.296005,207.224001,448.192001,206.728001,448.848007,206.072001L448.912003,206.072001L449.088005,207L451.00800300000003,207L451.00800300000003,194.2319994L448.656006,194.2319994L448.656006,197.3839998L448.73600799999997,198.79199979999999C448.096001,198.1999998,447.47200399999997,197.816,446.464005,197.816C444.544003,197.816,442.704002,199.608,442.704002,202.52C442.704002,205.464001,444.128002,207.224001,446.368004,207.224001ZM446.976006,205.288C445.792004,205.288,445.120003,204.36,445.120003,202.488C445.120003,200.712,445.968002,199.752,446.976006,199.752C447.552002,199.752,448.112007,199.927999,448.656006,200.424L448.656006,204.36C448.144005,205.032,447.600002,205.288,446.976006,205.288ZM457.42400399999997,207.224001C458.528008,207.224001,459.664001,206.84,460.54400599999997,206.232L459.744003,204.792C459.088005,205.191999,458.464005,205.4,457.744003,205.4C456.400002,205.4,455.440002,204.648,455.248001,203.191999L460.768005,203.191999C460.832001,202.968,460.880005,202.535999,460.880005,202.10399999999998C460.880005,199.608,459.600006,197.816,457.136002,197.816C455.00800300000003,197.816,452.960007,199.624,452.960007,202.52C452.960007,205.48,454.912003,207.224001,457.42400399999997,207.224001ZM455.20000500000003,201.608C455.392006,200.312,456.22400700000003,199.639999,457.168007,199.639999C458.336006,199.639999,458.864006,200.407999,458.864006,201.608L455.20000500000003,201.608ZM465.968002,207.224001C466.896004,207.224001,467.79200000000003,206.728001,468.448006,206.072001L468.512001,206.072001L468.688004,207L470.608002,207L470.608002,194.2319994L468.256004,194.2319994L468.256004,197.3839998L468.335999,198.79199979999999C467.69599900000003,198.1999998,467.072006,197.816,466.064003,197.816C464.144005,197.816,462.30400099999997,199.608,462.30400099999997,202.52C462.30400099999997,205.464001,463.728004,207.224001,465.968002,207.224001ZM466.576004,205.288C465.391998,205.288,464.720001,204.36,464.720001,202.488C464.720001,200.712,465.568001,199.752,466.576004,199.752C467.152,199.752,467.712006,199.927999,468.256004,200.424L468.256004,204.36C467.744003,205.032,467.20000500000003,205.288,466.576004,205.288Z" fill="#B91C1C" fill-opacity="1"/></g><g><path d="M262.112,201.1039991C262.5440001,201.7759991,263.0560002,202.6719999,263.3120003,203.2799997L260.64000005,203.2799997L260.64000005,204.6399994L264.1280003,204.6399994C263.2480001,206.559999,261.7920001,208.496,260.384,209.615999C260.59200001,209.888,260.92800003,210.656,261.0400001,211.056C261.5680001,210.592,262.128,210.016,262.6560001,209.36L262.6560001,215.327999L264.0640001,215.327999L264.0640001,209.152C264.5760002,209.856,265.1040001,210.672,265.3760004,211.152L266.1600003,209.983999L265.05600019999997,208.624C265.4880004,208.223999,266.0000005,207.695999,266.5120001,207.184L265.6160002,206.351999C265.3280001,206.799999,264.848,207.44,264.4320002,207.903999L264.0640001,207.488L264.0640001,207.392C264.7680001,206.256,265.3920002,205.04,265.8240004,203.8079996L265.072,203.2159996L264.848,203.2799997L263.5200002,203.2799997L264.5600004,202.6559992C264.2720003,202.079999,263.7440002,201.1999998,263.2800002,200.5279989L262.112,201.1039991ZM266.7200003,202.7679996L266.7200003,207.007999C266.7200003,209.232,266.5440001,212.208,264.8160005,214.271999C265.1200004,214.464001,265.6960001,214.959999,265.9200001,215.247999C267.5040002,213.327999,267.9840002,210.512,268.0799999,208.191999C268.6080008,209.76,269.3280001,211.12,270.240001,212.24C269.2800007,213.072001,268.1760006,213.695999,266.9920001,214.096001C267.2800002,214.4,267.6160002,214.959999,267.7920003,215.327999C269.0560007,214.832001,270.208,214.16,271.216001,213.264C272.176001,214.143999,273.296,214.816,274.624001,215.280001C274.832001,214.879999,275.248001,214.288,275.568001,214C274.272,213.615999,273.168,213.024,272.240001,212.24C273.376,210.89600000000002,274.240001,209.184,274.736001,207.024L273.84000100000003,206.671999L273.584001,206.719999L271.536,206.719999L271.536,204.1759996L273.584001,204.1759996C273.408001,204.8639994,273.23199999999997,205.53599930000001,273.056001,206L274.336,206.303999C274.688001,205.4559994,275.056001,204.1279993,275.360001,202.9599991L274.288001,202.7199993L274.064001,202.7679996L271.536,202.7679996L271.536,200.4959993L270.112,200.4959993L270.112,202.7679996L266.7200003,202.7679996ZM270.112,204.1759996L270.112,206.719999L268.1120005,206.719999L268.1120005,204.1759996L270.112,204.1759996ZM273.008,208.063999C272.592001,209.28,271.984,210.351999,271.216001,211.248C270.432,210.335999,269.8240004,209.264,269.3760004,208.063999L273.008,208.063999ZM277.504,201.7119999C278.368,202.4639997,279.472,203.5519991,279.968,204.2559996L281.007999,203.2159996C280.48,202.5279999,279.360001,201.5039997,278.48,200.7999992L277.504,201.7119999ZM276.639999,205.4719992L276.639999,206.927999L278.736,206.927999L278.736,212.063999C278.736,212.976,278.144001,213.664,277.79200000000003,213.968C278.048,214.17600099999999,278.544001,214.672001,278.71999900000003,214.976C278.944,214.656,279.344,214.304001,281.440001,212.591999C281.216,213.280001,280.912001,213.936001,280.512001,214.528C280.816,214.672001,281.375999,215.10399999999998,281.6,215.344C283.152,213.167999,283.392,209.712,283.392,207.232L283.392,202.4799995L289.504002,202.4799995L289.504002,213.632C289.504002,213.872,289.408001,213.952,289.184002,213.952C288.960001,213.968,288.240002,213.968,287.472,213.936001C287.664001,214.304001,287.872002,214.944,287.920002,215.312C289.056,215.312,289.76,215.280001,290.224001,215.056C290.704,214.816,290.848,214.4,290.848,213.664L290.848,201.1519995L282.048,201.1519995L282.048,207.232C282.048,208.672,282,210.368,281.616001,211.936C281.472,211.648,281.327999,211.296,281.23199999999997,211.024L280.192001,211.856L280.192001,205.4719992L276.639999,205.4719992ZM285.79200000000003,202.8959999L285.79200000000003,204.1119995L284.271999,204.1119995L284.271999,205.2159996L285.79200000000003,205.2159996L285.79200000000003,206.624L283.936001,206.624L283.936001,207.728L288.992001,207.728L288.992001,206.624L287.007999,206.624L287.007999,205.2159996L288.608002,205.2159996L288.608002,204.1119995L287.007999,204.1119995L287.007999,202.8959999L285.79200000000003,202.8959999ZM284.192001,208.879999L284.192001,213.455999L285.312,213.455999L285.312,212.736L288.512001,212.736L288.512001,208.879999L284.192001,208.879999ZM285.312,209.983999L287.375999,209.983999L287.375999,211.648L285.312,211.648L285.312,209.983999ZM298.175999,203.8079996L298.175999,205.0559998L295.776001,205.0559998L295.776001,206.271999L298.175999,206.271999L298.175999,208.864L304.576,208.864L304.576,206.271999L307.040001,206.271999L307.040001,205.0559998L304.576,205.0559998L304.576,203.8079996L303.088001,203.8079996L303.088001,205.0559998L299.616001,205.0559998L299.616001,203.8079996L298.175999,203.8079996ZM303.088001,206.271999L303.088001,207.695999L299.616001,207.695999L299.616001,206.271999L303.088001,206.271999ZM303.824001,210.927999C303.167999,211.61599999999999,302.30400099999997,212.17600099999999,301.279999,212.608C300.288002,212.16,299.440002,211.6,298.832001,210.927999L303.824001,210.927999ZM295.952,209.712L295.952,210.927999L297.888,210.927999L297.279999,211.168C297.903999,211.968,298.688,212.656,299.599998,213.216C298.240002,213.6,296.720001,213.84,295.184002,213.968C295.424,214.304001,295.69599900000003,214.879999,295.807999,215.247999C297.728001,215.024,299.584,214.656,301.216,214.048C302.768002,214.688,304.576,215.120001,306.576,215.344C306.768002,214.959999,307.136002,214.351999,307.456001,214.032C305.824001,213.888,304.288002,213.632,302.959999,213.232C304.288002,212.48,305.360001,211.472,306.080002,210.144L305.136002,209.648L304.863998,209.712L295.952,209.712ZM299.504002,200.7519989C299.69599900000003,201.1199989,299.872002,201.5839996,300.032001,201.999999L293.919998,201.999999L293.919998,206.32C293.919998,208.736,293.807999,212.223999,292.495998,214.656C292.880001,214.784,293.568001,215.10399999999998,293.872002,215.327999C295.216,212.768,295.424,208.927999,295.424,206.303999L295.424,203.407999L307.216,203.407999L307.216,201.999999L301.74399900000003,201.999999C301.552002,201.487999,301.279999,200.8799992,301.024002,200.3999996L299.504002,200.7519989Z" fill="#3D3D3D" fill-opacity="1"/></g><g><path d="M152.4720001,192.927999C153.2880001,194.143999,154.3600006,195.792,154.8560009,196.752L156.184001,195.968C155.656,195.024,154.552,193.44,153.7200003,192.271999L152.4720001,192.927999ZM150.00800040000001,193.68L150.00800040000001,197.024L147.6240001,197.024L147.6240001,193.68L150.00800040000001,193.68ZM150.00800040000001,192.351999L147.6240001,192.351999L147.6240001,189.1519995L150.00800040000001,189.1519995L150.00800040000001,192.351999ZM146.2,187.7919998L146.2,199.664L147.6240001,199.664L147.6240001,198.384001L151.4320002,198.384001L151.4320002,187.7919998L146.2,187.7919998ZM157.112,186.5919991L157.112,189.5839996L152.0880003,189.5839996L152.0880003,191.0879993L157.112,191.0879993L157.112,199.200001C157.112,199.535999,156.984,199.632,156.648001,199.648001C156.296,199.648001,155.112,199.648001,153.9120007,199.615999C154.1360006,200.048,154.3760004,200.719999,154.4560003,201.152C156.056001,201.152,157.128,201.120001,157.768001,200.879999C158.408001,200.639999,158.648001,200.208,158.648001,199.216L158.648001,191.0879993L160.456,191.0879993L160.456,189.5839996L158.648001,189.5839996L158.648001,186.5919991L157.112,186.5919991ZM162.312,190.2079992L162.312,201.344L163.880001,201.344L163.880001,190.2079992L162.312,190.2079992ZM162.552,187.3759995C163.288,188.1119995,164.120001,189.1519995,164.455999,189.8239994L165.736,188.99199959999999C165.352001,188.3039999,164.472,187.3439999,163.736,186.6559992L162.552,187.3759995ZM167.24,195.375999L170.76,195.375999L170.76,197.264L167.24,197.264L167.24,195.375999ZM167.24,192.271999L170.76,192.271999L170.76,194.128L167.24,194.128L167.24,192.271999ZM165.880001,191.04L165.880001,198.496L172.167999,198.496L172.167999,191.04L165.880001,191.04ZM166.535999,187.3439999L166.535999,188.7679996L174.216,188.7679996L174.216,199.615999C174.216,199.82399900000001,174.167999,199.888,173.944,199.903999C173.752001,199.903999,173.128,199.92000000000002,172.52,199.888C172.71200199999998,200.256001,172.903999,200.879999,172.984001,201.264C173.976002,201.264,174.696001,201.247999,175.17600099999999,201.007999C175.639999,200.752001,175.784,200.384001,175.784,199.615999L175.784,187.3439999L166.535999,187.3439999ZM179.751999,186.8799992L179.751999,192.24C179.751999,195.007999,179.528,197.968,177.512001,200.191999C177.880001,200.448,178.439999,201.040001,178.695999,201.408001C180.136002,199.856001,180.792,197.984,181.096001,196.032L187.560001,196.032L187.560001,201.344L189.208,201.344L189.208,194.464L181.271999,194.464C181.32,193.728,181.33599900000002,192.976,181.33599900000002,192.24L181.33599900000002,192.128L191.431999,192.128L191.431999,190.5759993L187.223999,190.5759993L187.223999,186.5119991L185.608002,186.5119991L185.608002,190.5759993L181.33599900000002,190.5759993L181.33599900000002,186.8799992L179.751999,186.8799992ZM203.127998,187.9199991L203.127998,197.632L204.535999,197.632L204.535999,187.9199991L203.127998,187.9199991ZM206.248001,186.7199993L206.248001,199.232C206.248001,199.504,206.167999,199.584,205.89600000000002,199.6C205.608002,199.6,204.743999,199.6,203.832001,199.568001C204.05599999999998,199.968,204.312,200.639999,204.375999,201.040001C205.576,201.040001,206.45600100000001,201.007999,207.015999,200.768C207.54399899999999,200.528,207.720001,200.096001,207.720001,199.232L207.720001,186.7199993L206.248001,186.7199993ZM193.911999,199.216L194.248001,200.624001C196.391998,200.24,199.431999,199.664,202.279999,199.120001L202.183998,197.792L198.952,198.384001L198.952,196.144L202.024002,196.144L202.024002,194.816L198.952,194.816L198.952,193.232L197.528,193.232L197.528,194.816L194.472,194.816L194.472,196.144L197.528,196.144L197.528,198.624001C196.152,198.864,194.903999,199.072001,193.911999,199.216ZM194.888,193.072C195.32,192.89600000000002,195.94400000000002,192.832,200.71200199999998,192.415999C200.903999,192.736,201.063999,193.056,201.192001,193.312L202.344002,192.544C201.89600000000002,191.6159992,200.855999,190.1759996,199.99200100000002,189.1039991L198.903999,189.7439995C199.256001,190.1919994,199.624001,190.7039995,199.959999,191.2319994L196.408001,191.4879999C197,190.7039995,197.576,189.7439995,198.040001,188.815999L202.360001,188.815999L202.360001,187.487999L194.071999,187.487999L194.071999,188.815999L196.375999,188.815999C195.928001,189.8239994,195.368,190.7039995,195.175999,190.99199959999999C194.903999,191.3599997,194.647999,191.632,194.408001,191.6959991C194.568001,192.08,194.807999,192.768,194.888,193.072ZM209.192001,202.880001L210.487999,202.880001L214.903999,187.2159996L213.639999,187.2159996L209.192001,202.880001ZM149.1280003,219.239998L147.832,219.768002C148.3600001,220.599998,148.9840002,221.28799800000002,149.6880002,221.848C148.7440002,222.312,147.4480002,222.71200199999998,145.68800002,223.015999C146.024,223.368,146.4400001,224.023998,146.6160001,224.360001C148.6000001,223.94400000000002,150.0560002,223.400002,151.1280003,222.728001C153.3840008,223.832001,156.328,224.119999,159.944,224.248001C160.040001,223.751999,160.312,223.096001,160.584001,222.759998C157.160001,222.71200199999998,154.4400005,222.535999,152.3600001,221.736C153.0960007,220.984001,153.4960003,220.119999,153.7200003,219.208L159.000001,219.208L159.000001,212.82399900000001L153.9120007,212.82399900000001L153.9120007,211.655998L160.008,211.655998L160.008,210.296L146.008,210.296L146.008,211.655998L152.3280005,211.655998L152.3280005,212.82399900000001L147.4320002,212.82399900000001L147.4320002,219.208L152.0880003,219.208C151.8960004,219.863998,151.5600004,220.472,150.9520001,221.015999C150.2480001,220.551998,149.6400003,219.975998,149.1280003,219.239998ZM148.8720002,216.584L152.3280005,216.584L152.3280005,217.175999L152.2960005,217.959999L148.8720002,217.959999L148.8720002,216.584ZM153.8960009,217.959999L153.9120007,217.192001L153.9120007,216.584L157.496,216.584L157.496,217.959999L153.8960009,217.959999ZM148.8720002,214.071999L152.3280005,214.071999L152.3280005,215.416L148.8720002,215.416L148.8720002,214.071999ZM153.9120007,214.071999L157.496,214.071999L157.496,215.416L153.9120007,215.416L153.9120007,214.071999ZM165.720001,214.216L172.344002,214.216L172.344002,215.416L165.720001,215.416L165.720001,214.216ZM164.216,213.16L164.216,216.472L173.928001,216.472L173.928001,213.16L164.216,213.16ZM167.880001,209.768L168.328001,211.079998L161.912001,211.079998L161.912001,212.375999L176.024002,212.375999L176.024002,211.079998L170.040001,211.079998C169.864,210.568001,169.624001,209.927999,169.400002,209.416L167.880001,209.768ZM162.440001,217.256001L162.440001,224.344002L163.912001,224.344002L163.912001,218.503998L174.056,218.503998L174.056,222.855999C174.056,223.048,173.976002,223.112,173.768002,223.112C173.576,223.127998,172.76,223.127998,172.10399999999998,223.096001C172.280001,223.416,172.488001,223.880001,172.568001,224.216C173.639999,224.231998,174.392,224.216,174.888,224.040001C175.416,223.848,175.576,223.560001,175.576,222.855999L175.576,217.256001L162.440001,217.256001ZM165.448,219.304001L165.448,223.464001L166.872,223.464001L166.872,222.71200199999998L172.344002,222.71200199999998L172.344002,219.304001L165.448,219.304001ZM166.872,220.375999L171,220.375999L171,221.639999L166.872,221.639999L166.872,220.375999ZM187.112,215.799999L187.112,221.928001C187.112,223.464001,187.48,223.928001,188.872002,223.928001C189.16,223.928001,190.312,223.928001,190.599998,223.928001C191.863998,223.928001,192.232002,223.223999,192.375999,220.68C191.976002,220.584,191.352001,220.327999,191.032001,220.071999C190.984001,222.183998,190.903999,222.551998,190.472,222.551998C190.200001,222.551998,189.304001,222.551998,189.096001,222.551998C188.66400099999998,222.551998,188.584,222.45600100000001,188.584,221.928001L188.584,215.799999L187.112,215.799999ZM188.167999,210.615999C188.936001,211.351999,189.848,212.407999,190.264,213.07999999999998L191.400002,212.216C190.936001,211.576,189.976002,210.568001,189.223999,209.863998L188.167999,210.615999ZM185.192001,209.703999C185.192001,210.903999,185.176003,212.087999,185.144001,213.24L181.688,213.24L181.688,214.66400099999998L185.063999,214.66400099999998C184.807999,218.183998,183.99200100000002,221.28799800000002,181.271999,223.16C181.672001,223.431999,182.152,223.928001,182.391998,224.312C185.352001,222.167999,186.264,218.632,186.55200200000002,214.66400099999998L192.248001,214.66400099999998L192.248001,213.24L186.632,213.24C186.68,212.071999,186.695999,210.888,186.695999,209.703999L185.192001,209.703999ZM181.144001,209.54399899999999C180.327999,211.89600000000002,178.952,214.248001,177.495998,215.767998C177.751999,216.119999,178.183998,216.936001,178.327999,217.304001C178.728001,216.872002,179.112,216.391998,179.48,215.880001L179.48,224.344002L180.936001,224.344002L180.936001,213.559999C181.576,212.407999,182.136002,211.191999,182.584,209.976L181.144001,209.54399899999999ZM200.248001,209.495998L200.248001,211.848L197.736,211.848C197.94400000000002,211.256001,198.119999,210.664,198.279999,210.10399999999998L196.743999,209.799999C196.375999,211.464001,195.576,213.608,194.504002,214.952C194.872002,215.096001,195.48,215.416,195.832001,215.639999C196.344002,215,196.792,214.183998,197.175999,213.304001L200.248001,213.304001L200.248001,216.264L193.928001,216.264L193.928001,217.720001L197.959999,217.720001C197.672001,220.136002,197.015999,222.071999,193.703999,223.127998C194.040001,223.431999,194.472,224.040001,194.647999,224.424C198.327999,223.112,199.192001,220.728001,199.528,217.720001L202.264,217.720001L202.264,222.071999C202.264,223.624001,202.66400099999998,224.10399999999998,204.248001,224.10399999999998C204.568001,224.10399999999998,206.00799899999998,224.10399999999998,206.328003,224.10399999999998C207.720001,224.10399999999998,208.136002,223.448002,208.279999,220.952C207.880001,220.84,207.223999,220.599998,206.903999,220.344002C206.84,222.344002,206.743999,222.66400099999998,206.200001,222.66400099999998C205.863998,222.66400099999998,204.71200199999998,222.66400099999998,204.45600100000001,222.66400099999998C203.89600000000002,222.66400099999998,203.784,222.584,203.784,222.071999L203.784,217.720001L208.10399999999998,217.720001L208.10399999999998,216.264L201.784,216.264L201.784,213.304001L206.903999,213.304001L206.903999,211.848L201.784,211.848L201.784,209.495998L200.248001,209.495998ZM209.655998,221.976002L210.024002,223.464001C211.54399899999999,222.855999,213.54399899999999,222.071999,215.400002,221.28799800000002L215.112,219.99200100000002C213.112,220.743999,211.015999,221.528,209.655998,221.976002ZM215.416,210.504L215.416,211.927999L217.096001,211.927999C216.903999,216.919998,216.279999,221,214.13600200000002,223.464001C214.503998,223.672001,215.223999,224.152,215.463997,224.391998C216.760002,222.728001,217.52800000000002,220.568001,217.975998,217.959999C218.47199999999998,219.032001,219.048004,220.040001,219.704002,220.936001C218.82399700000002,221.911999,217.783997,222.68,216.632004,223.223999C216.968002,223.448002,217.480003,224.023998,217.704002,224.360001C218.776001,223.799999,219.767998,223.048,220.64800300000002,222.071999C221.496002,222.984001,222.47199999999998,223.751999,223.54399899999999,224.312C223.767998,223.928001,224.216003,223.368,224.55200200000002,223.080002C223.44799799999998,222.568001,222.45600100000001,221.832001,221.576004,220.903999C222.66400099999998,219.368,223.480003,217.431999,223.95999899999998,215.079998L223.031998,214.711998L222.760002,214.759998L221.44799799999998,214.759998C221.832001,213.448,222.264,211.848,222.599998,210.504L215.416,210.504ZM218.599998,211.927999L220.72799700000002,211.927999C220.37599899999998,213.4,219.928001,214.984001,219.54399899999999,216.088001L222.248001,216.088001C221.88000499999998,217.495998,221.32,218.728001,220.615997,219.768002C219.639999,218.439999,218.872002,216.872002,218.344002,215.239998C218.45600100000001,214.200001,218.536003,213.07999999999998,218.599998,211.927999ZM209.896004,216.295998C210.13600200000002,216.183998,210.536003,216.088001,212.328003,215.848C211.655998,216.824001,211.08000199999998,217.576,210.792,217.880001C210.279999,218.472,209.896004,218.855999,209.512001,218.936001C209.688004,219.32,209.912003,219.99200100000002,209.991997,220.279999C210.360001,220.00799899999998,210.968002,219.784,215.16000400000001,218.551998C215.112,218.231998,215.08000199999998,217.655998,215.08000199999998,217.271999L212.328003,218.00799899999998C213.43199900000002,216.68,214.503998,215.112,215.400002,213.54399899999999L214.152,212.775999C213.86399799999998,213.368,213.52800000000002,213.959999,213.17600299999998,214.52L211.367996,214.695999C212.328003,213.351999,213.25599699999998,211.688,213.94400000000002,210.087999L212.55200200000002,209.431999C211.896004,211.368,210.72799700000002,213.4,210.360001,213.927999C210.008003,214.472,209.720001,214.823997,209.416,214.903999C209.575996,215.304001,209.816002,216.00799899999998,209.896004,216.295998Z" fill="#3D3D3D" fill-opacity="1"/></g><g><path d="M104.128,101.823999L104.128,102.944L109.1680002,102.944L109.1680002,103.792C109.1680002,104.08,109.0720005,104.16,108.7840004,104.176001C108.5120001,104.191999,107.55199999999999,104.191999,106.6720004,104.16C106.8640003,104.496,107.10400010000001,105.040001,107.184,105.392C108.5440001,105.392,109.3920002,105.37599900000001,109.9360003,105.167999C110.4960003,104.959999,110.7040005,104.62400099999999,110.7040005,103.792L110.7040005,102.944L114.144001,102.944L114.144001,103.648001L115.664001,103.648001L115.664001,100.816L117.344001,100.816L117.344001,99.632L115.664001,99.632L115.664001,97.648L110.7040005,97.648L110.7040005,96.688L115.408001,96.688L115.408001,93.7119999L110.7040005,93.7119999L110.7040005,92.8799992L117.008,92.8799992L117.008,91.6639996L110.7040005,91.6639996L110.7040005,90.4959993L109.1680002,90.4959993L109.1680002,91.6639996L103.024,91.6639996L103.024,92.8799992L109.1680002,92.8799992L109.1680002,93.7119999L104.6880002,93.7119999L104.6880002,96.688L109.1680002,96.688L109.1680002,97.648L104.256,97.648L104.256,98.70400000000001L109.1680002,98.70400000000001L109.1680002,99.632L102.70400006,99.632L102.70400006,100.816L109.1680002,100.816L109.1680002,101.823999L104.128,101.823999ZM106.1440001,94.7039995L109.1680002,94.7039995L109.1680002,95.6799994L106.1440001,95.6799994L106.1440001,94.7039995ZM110.7040005,94.7039995L113.872001,94.7039995L113.872001,95.6799994L110.7040005,95.6799994L110.7040005,94.7039995ZM110.7040005,98.70400000000001L114.144001,98.70400000000001L114.144001,99.632L110.7040005,99.632L110.7040005,98.70400000000001ZM110.7040005,100.816L114.144001,100.816L114.144001,101.823999L110.7040005,101.823999L110.7040005,100.816ZM123.056,98.368L123.056,99.856L127.55199999999999,99.856L127.55199999999999,105.344L129.072001,105.344L129.072001,99.856L133.344002,99.856L133.344002,98.368L129.072001,98.368L129.072001,95.184L132.608002,95.184L132.608002,93.6959991L129.072001,93.6959991L129.072001,90.6879997L127.55199999999999,90.6879997L127.55199999999999,93.6959991L125.76,93.6959991C125.952,93.0239992,126.112,92.3359995,126.256001,91.63199900000001L124.799999,91.3279991C124.44800000000001,93.3599997,123.77600100000001,95.4239998,122.864,96.719999C123.248001,96.879999,123.888,97.247999,124.176001,97.455999C124.576,96.832,124.944,96.048,125.264,95.184L127.55199999999999,95.184L127.55199999999999,98.368L123.056,98.368ZM122.112,90.5599995C121.280001,92.9119997,119.888,95.2639999,118.416,96.783999C118.672001,97.136,119.104,97.952,119.247999,98.32C119.68,97.856,120.096001,97.344,120.496,96.783999L120.496,105.327999L121.952,105.327999L121.952,94.4639997C122.560001,93.3439999,123.104,92.1599998,123.535999,90.9919996L122.112,90.5599995ZM144.127998,91.9199991L144.127998,101.632L145.535999,101.632L145.535999,91.9199991L144.127998,91.9199991ZM147.248001,90.7199993L147.248001,103.232C147.248001,103.504,147.167999,103.584,146.89600000000002,103.6C146.608002,103.6,145.743999,103.6,144.832001,103.568001C145.05599999999998,103.968,145.312,104.639999,145.375999,105.040001C146.576,105.040001,147.45600100000001,105.007999,148.015999,104.768C148.54399899999999,104.52799999999999,148.720001,104.096001,148.720001,103.232L148.720001,90.7199993L147.248001,90.7199993ZM134.911999,103.21600000000001L135.248001,104.62400099999999C137.391998,104.24,140.431999,103.664,143.279999,103.120001L143.183998,101.792L139.952,102.384001L139.952,100.144L143.024002,100.144L143.024002,98.816L139.952,98.816L139.952,97.232L138.528,97.232L138.528,98.816L135.472,98.816L135.472,100.144L138.528,100.144L138.528,102.62400099999999C137.152,102.864,135.903999,103.072001,134.911999,103.21600000000001ZM135.888,97.072C136.32,96.896,136.94400000000002,96.832,141.71200199999998,96.415999C141.903999,96.736,142.063999,97.056,142.192001,97.312L143.344002,96.544C142.89600000000002,95.6159992,141.855999,94.1759996,140.99200100000002,93.1039991L139.903999,93.7439995C140.256001,94.1919994,140.624001,94.7039995,140.959999,95.2319994L137.408001,95.4879999C138,94.7039995,138.576,93.7439995,139.040001,92.815999L143.360001,92.815999L143.360001,91.487999L135.071999,91.487999L135.071999,92.815999L137.375999,92.815999C136.928001,93.8239994,136.368,94.7039995,136.175999,94.9919996C135.903999,95.3599997,135.647999,95.632,135.408001,95.6959991C135.568001,96.08,135.807999,96.768,135.888,97.072ZM151.136002,91.4399996C151.888,92.4159994,152.720001,93.7439995,153.05599999999998,94.592L154.448002,93.8399992C154.096001,92.9919996,153.216,91.7279997,152.431999,90.7839994L151.136002,91.4399996ZM159.216,90.5439997C159.183998,91.5999994,159.167999,92.6079998,159.10399999999998,93.5679998L155.216,93.5679998L155.216,95.0239992L158.959999,95.0239992C158.608002,97.712,157.66400099999998,99.903999,155.00799899999998,101.232C155.344002,101.504,155.807999,102.063999,156,102.431999C158.144001,101.312,159.296001,99.68,159.936001,97.712C161.45600100000001,99.264,163.040001,101.104,163.856003,102.351999L165.136002,101.37599900000001C164.127998,99.936,162.096001,97.76,160.33599900000002,96.112L160.496002,95.0239992L165.088001,95.0239992L165.088001,93.5679998L160.639999,93.5679998C160.704002,92.5919991,160.736,91.5839996,160.768002,90.5439997L159.216,90.5439997ZM154.288002,96.4L150.688,96.4L150.688,97.856L152.768002,97.856L152.768002,101.888C152.080002,102.191999,151.264,102.848,150.464001,103.728001L151.52,105.184C152.240002,104.112,152.976002,103.087999,153.487999,103.087999C153.855999,103.087999,154.38399900000002,103.632,155.088001,104.063999C156.223999,104.768,157.568001,104.944,159.61600099999998,104.944C161.152,104.944,163.968002,104.848,165.05599999999998,104.78399999999999C165.071999,104.336,165.328003,103.584,165.504002,103.167999C163.952,103.37599900000001,161.472,103.504,159.66400099999998,103.504C157.84,103.504,156.448002,103.392,155.375999,102.736C154.911999,102.464001,154.576,102.191999,154.288002,102L154.288002,96.4Z" fill="#3D3D3D" fill-opacity="1"/></g><g><path d="M320.73600006,98.768L320.73600006,100.24L327.2320004,100.24L327.2320004,103.37599900000001C327.2320004,103.712,327.1040006,103.823999,326.7360005,103.823999C326.3680005,103.84,325.072,103.84,323.7920003,103.808001C324.0320001,104.208,324.3200002,104.879999,324.4320002,105.29599999999999C326.0960002,105.312,327.1840005,105.280001,327.8720002,105.040001C328.5440006,104.799999,328.816,104.384001,328.816,103.408001L328.816,100.24L335.296,100.24L335.296,98.768L328.816,98.768L328.816,96.464L334.368001,96.464L334.368001,95.0239992L328.816,95.0239992L328.816,92.6399994C330.656,92.4159994,332.384001,92.1279993,333.776001,91.7279997L332.656,90.4959993C330.128,91.2159996,325.5840001,91.6479998,321.7440001,91.8239994C321.8880001,92.1599998,322.0800002,92.7679996,322.128,93.1519995C323.7440002,93.0879993,325.5040002,92.9759998,327.2320004,92.815999L327.2320004,95.0239992L321.8240001,95.0239992L321.8240001,96.464L327.2320004,96.464L327.2320004,98.768L320.73600006,98.768ZM337.375999,91.7759991L337.375999,93.1199999L343.6,93.1199999L343.6,91.7759991L337.375999,91.7759991ZM346.192001,90.7679996C346.192001,91.9039993,346.192001,93.0079994,346.16,94.0959997L344.096001,94.0959997L344.096001,95.55199999999999L346.112,95.55199999999999C345.92,99.12,345.312,102.24,343.23199999999997,104.208C343.616001,104.431999,344.128,104.959999,344.368,105.327999C346.688,103.087999,347.375999,99.55199999999999,347.584,95.55199999999999L349.664001,95.55199999999999C349.488001,100.96000000000001,349.296001,102.992001,348.912001,103.45599899999999C348.752001,103.664,348.576,103.712,348.30400099999997,103.712C347.968,103.712,347.200001,103.712,346.352001,103.632C346.608002,104.048,346.784,104.672001,346.816002,105.104C347.648001,105.152,348.496,105.167999,349.007999,105.104C349.535999,105.024,349.888,104.864,350.240002,104.384001C350.784,103.664,350.960001,101.36,351.168001,94.816C351.168001,94.6079998,351.168001,94.0959997,351.168001,94.0959997L347.648001,94.0959997C347.68,93.0079994,347.69599900000003,91.8879995,347.69599900000003,90.7679996L346.192001,90.7679996ZM337.440001,103.47200000000001C337.856001,103.21600000000001,338.48,103.024,342.720001,102L342.976,102.944L344.288,102.496C344.016001,101.408,343.312,99.535999,342.704,98.14399900000001L341.488001,98.48C341.76,99.167999,342.063999,99.968,342.32,100.736L338.976,101.472C339.568001,100.112,340.112,98.48,340.496,96.927999L343.888,96.927999L343.888,95.5359993L336.816,95.5359993L336.816,96.927999L338.944,96.927999C338.559999,98.719999,337.936001,100.496,337.712,100.992C337.455999,101.6,337.23199999999997,102,336.959999,102.096001C337.120001,102.464001,337.360001,103.167999,337.440001,103.47200000000001ZM353.279999,93.5999994C353.216,94.9279995,352.959999,96.70400000000001,352.528,97.76L353.664001,98.176C354.096001,96.992,354.352001,95.1199999,354.383999,93.7439995L353.279999,93.5999994ZM361.327999,96.22399899999999C361.136002,97.584,360.832001,98.959999,360.271999,99.903999C360.543999,100.032,361.024002,100.32,361.232002,100.496C361.807999,99.488,362.20799999999997,97.952,362.448002,96.415999L361.327999,96.22399899999999ZM365.79200000000003,96.128C365.552002,97.488,365.120003,98.959999,364.608002,99.936C364.912003,100.048,365.440002,100.288,365.69599900000003,100.44800000000001C366.176003,99.424,366.672001,97.84,366.959999,96.384L365.79200000000003,96.128ZM354.576,90.4959993L354.576,105.327999L355.967999,105.327999L355.967999,93.6799994C356.383999,94.6719999,356.736,95.9039993,356.848,96.688L357.968002,96.22399899999999C357.855999,95.4239998,357.424,94.1119995,356.944,93.1039991L355.967999,93.4559994L355.967999,90.4959993L354.576,90.4959993ZM359.903999,90.4639997C359.84000000000003,91.2799997,359.760002,92.079999,359.664001,92.8479996L357.599998,92.8479996L357.599998,94.1919994L359.472,94.1919994C358.944,97.44,358.063999,100.16,356.416,102C356.736,102.24,357.312,102.768,357.52,103.040001C359.312,100.88,360.288002,97.84,360.880001,94.1919994L367.167999,94.1919994L367.167999,92.8479996L361.071999,92.8479996C361.167999,92.1119995,361.248001,91.3599997,361.312,90.5919991L359.903999,90.4639997ZM363.216,94.7199993C363.007999,99.776,362.32,102.944,358.736,104.16C359.024002,104.44800000000001,359.391998,105.007999,359.568001,105.37599900000001C361.552002,104.608,362.720001,103.360001,363.424,101.584C364.112,103.21600000000001,365.120003,104.511999,366.512001,105.264C366.720001,104.912001,367.152,104.4,367.456001,104.14399900000001C365.74399900000003,103.37599900000001,364.560001,101.68,363.968002,99.664C364.25600099999997,98.271999,364.400002,96.656,364.48,94.7839994L363.216,94.7199993ZM372.816002,97.024L379.888,97.024L379.888,97.92L372.816002,97.92L372.816002,97.024ZM372.816002,95.1519995L379.888,95.1519995L379.888,96.048L372.816002,96.048L372.816002,95.1519995ZM371.312,94.1119995L371.312,98.976L373.056,98.976C372.144001,100.112,370.768002,101.136,369.408001,101.80799999999999C369.712002,102.032,370.240002,102.52799999999999,370.464001,102.78399999999999C371.071999,102.431999,371.712002,101.984,372.32,101.488C372.911999,102.112,373.616001,102.62400099999999,374.416,103.072001C372.576,103.584,370.512001,103.872,368.464001,104.016001C368.703999,104.351999,368.944,104.959999,369.040001,105.344C371.487999,105.120001,373.984001,104.672001,376.15999999999997,103.888C378.032001,104.608,380.25600099999997,105.024,382.656002,105.21600000000001C382.832001,104.816,383.184002,104.224001,383.487999,103.888C381.472,103.792,379.568001,103.55199999999999,377.919998,103.136C379.312,102.416,380.496002,101.52,381.296001,100.368L380.352001,99.776L380.112,99.84L374.032001,99.84C374.271999,99.568,374.48,99.29599999999999,374.672001,99.024L374.543999,98.976L381.472,98.976L381.472,94.1119995L371.312,94.1119995ZM372.127998,90.4959993C371.391998,92.0319996,370.063999,93.4879999,368.703999,94.3999996C368.992001,94.6719999,369.472,95.2799997,369.664001,95.5679998C370.48,94.9439993,371.312,94.1279993,372.032001,93.2159996L382.576,93.2159996L382.576,91.9679995L372.911999,91.9679995C373.119999,91.6159992,373.312,91.263999,373.487999,90.9119997L372.127998,90.4959993ZM378.928001,100.96000000000001C378.176003,101.6,377.183998,102.128,376.063999,102.54400100000001C374.976002,102.128,374.048,101.6,373.344002,100.96000000000001L378.928001,100.96000000000001Z" fill="#3D3D3D" fill-opacity="1"/></g><path d="" fill-rule="evenodd" fill="#D8D8D8" fill-opacity="1"/><rect x="185" y="0" width="115" height="61" rx="10" fill="#EAB308" fill-opacity="0.11999999731779099"/><rect x="186" y="1" width="113" height="59" rx="9" fill-opacity="0" stroke-opacity="1" stroke="#EAB308" fill="none" stroke-width="2"/><g><path d="M221.8240001,30.648L221.8240001,27.0319996L223.3600001,27.0319996C224.8800001,27.0319996,225.7120004,27.463999700000002,225.7120004,28.7439995C225.7120004,30.007998999999998,224.8800001,30.648,223.3600001,30.648L221.8240001,30.648ZM225.9040003,37L228.544001,37L225.7760005,32.152C227.1360006,31.624000000000002,228.032001,30.52,228.032001,28.7439995C228.032001,26.0239992,226.0640001,25.143999100000002,223.5680003,25.143999100000002L219.4560001,25.143999100000002L219.4560001,37L221.8240001,37L221.8240001,32.519999999999996L223.4720001,32.519999999999996L225.9040003,37ZM233.888,37.224001C234.992001,37.224001,236.128,36.84,237.007999,36.232L236.208,34.792C235.552,35.191998999999996,234.928001,35.4,234.208,35.4C232.864,35.4,231.904,34.647999999999996,231.712,33.191998999999996L237.232,33.191998999999996C237.296001,32.968,237.344002,32.535999000000004,237.344002,32.104C237.344002,29.608,236.064001,27.816000000000003,233.6,27.816000000000003C231.472,27.816000000000003,229.424001,29.624000000000002,229.424001,32.519999999999996C229.424001,35.480000000000004,231.376,37.224001,233.888,37.224001ZM231.664001,31.608C231.856001,30.311999999999998,232.68800099999999,29.639999,233.632,29.639999C234.800001,29.639999,235.328001,30.407999,235.328001,31.608L231.664001,31.608ZM241.247999,37.224001C242.288,37.224001,243.184,36.728001,243.952,36.040001000000004L244.032,36.040001000000004L244.191999,37L246.112,37L246.112,31.768C246.112,29.176000000000002,244.944,27.816000000000003,242.672001,27.816000000000003C241.264,27.816000000000003,239.983999,28.3599997,238.944,29L239.775999,30.567999999999998C240.608,30.072,241.408001,29.704,242.24,29.704C243.344,29.704,243.728001,30.375999,243.76,31.256C240.16,31.639999,238.608,32.647999999999996,238.608,34.552C238.608,36.087998999999996,239.648001,37.224001,241.247999,37.224001ZM242.032,35.384001C241.344,35.384001,240.848,35.08,240.848,34.375999C240.848,33.559999,241.568001,32.968,243.76,32.712L243.76,34.504C243.200001,35.063998999999995,242.704,35.384001,242.032,35.384001ZM251.66400099999998,37.224001C252.592003,37.224001,253.488003,36.728001,254.144001,36.072001L254.208,36.072001L254.384003,37L256.30400099999997,37L256.30400099999997,24.2319994L253.952003,24.2319994L253.952003,27.383999799999998L254.032001,28.7919998C253.392002,28.1999998,252.768002,27.816000000000003,251.760002,27.816000000000003C249.84,27.816000000000003,248.000002,29.608,248.000002,32.519999999999996C248.000002,35.464000999999996,249.424002,37.224001,251.66400099999998,37.224001ZM252.27200299999998,35.288C251.088001,35.288,250.416,34.36,250.416,32.488C250.416,30.712,251.264,29.752000000000002,252.27200299999998,29.752000000000002C252.848,29.752000000000002,253.408001,29.927999,253.952003,30.424L253.952003,34.36C253.440002,35.032,252.89600000000002,35.288,252.27200299999998,35.288ZM259.600002,40.584C261.600002,40.584,262.560001,39.384001,263.344002,37.271999L266.528004,28.04L264.272003,28.04L263.040001,32.2C262.816002,33.032,262.592003,33.896,262.400002,34.728L262.320004,34.728C262.064003,33.864000000000004,261.840004,33,261.568001,32.2L260.144001,28.04L257.776001,28.04L261.264004,36.823999L261.10400400000003,37.367999999999995C260.848003,38.152,260.336002,38.728001,259.42400399999997,38.728001C259.216003,38.728001,258.96000300000003,38.664,258.800003,38.615999L258.368004,40.424C258.720001,40.519999999999996,259.072002,40.584,259.600002,40.584Z" fill="#854D0E" fill-opacity="1"/></g><rect x="0" y="177" width="115" height="61" rx="10" fill="#F97316" fill-opacity="0.11999999731779099"/><rect x="1" y="178" width="113" height="59" rx="9" fill-opacity="0" stroke-opacity="1" stroke="#F97316" fill="none" stroke-width="2"/><g><path d="M27.4560001,214L31.6800003,214C34.2880001,214,36.256001,212.89600000000002,36.256001,210.512C36.256001,208.927999,35.3280001,208.016,34.0480003,207.712L34.0480003,207.648C35.0560007,207.28,35.6640005,206.176,35.6640005,205.0719995C35.6640005,202.8639994,33.8080006,202.1439991,31.3760004,202.1439991L27.4560001,202.1439991L27.4560001,214ZM29.8240001,206.976L29.8240001,203.9679995L31.2320004,203.9679995C32.6560001,203.9679995,33.3600001,204.3839998,33.3600001,205.4239998C33.3600001,206.368,32.7200003,206.976,31.2160001,206.976L29.8240001,206.976ZM29.8240001,212.17600099999999L29.8240001,208.719999L31.4720001,208.719999C33.1040006,208.719999,33.9520001,209.216,33.9520001,210.368C33.9520001,211.6,33.0720005,212.17600099999999,31.4720001,212.17600099999999L29.8240001,212.17600099999999ZM40.384001,214.224001C40.928001,214.224001,41.312001,214.128,41.584002,214.016001L41.296001000000004,212.271999C41.136002,212.304001,41.072001,212.304001,40.976002,212.304001C40.752001,212.304001,40.512001,212.128,40.512001,211.584L40.512001,201.2319994L38.160001,201.2319994L38.160001,211.488C38.160001,213.152,38.736001,214.224001,40.384001,214.224001ZM46.944,214.224001C49.184002,214.224001,51.248001,212.496,51.248001,209.52C51.248001,206.544,49.184002,204.816,46.944,204.816C44.688002,204.816,42.640001,206.544,42.640001,209.52C42.640001,212.496,44.688002,214.224001,46.944,214.224001ZM46.944,212.304001C45.712002,212.304001,45.040001000000004,211.216,45.040001000000004,209.52C45.040001000000004,207.84,45.712002,206.736,46.944,206.736C48.160002,206.736,48.848001,207.84,48.848001,209.52C48.848001,211.216,48.160002,212.304001,46.944,212.304001ZM57.024001999999996,214.224001C58.016003,214.224001,59.104004,213.888,59.952003,213.136L59.024002,211.584C58.528,212,57.936001000000005,212.304001,57.280003,212.304001C55.984001,212.304001,55.056002,211.216,55.056002,209.52C55.056002,207.84,55.984001,206.736,57.360003,206.736C57.856003,206.736,58.272003,206.944,58.720001,207.312L59.840004,205.8239994C59.184002,205.2319994,58.336002,204.816,57.232002,204.816C54.800001,204.816,52.656002,206.544,52.656002,209.52C52.656002,212.496,54.560001,214.224001,57.024001999999996,214.224001ZM61.648003,214L63.968002,214L63.968002,211.728L65.216003,210.271999L67.39200199999999,214L69.95200299999999,214L66.592003,208.736L69.664001,205.04L67.08800500000001,205.04L64.03200100000001,208.879999L63.968002,208.879999L63.968002,201.2319994L61.648003,201.2319994L61.648003,214ZM74.752003,214.224001C75.856003,214.224001,76.99200400000001,213.84,77.87200200000001,213.232L77.072002,211.792C76.416004,212.191999,75.79200399999999,212.4,75.072002,212.4C73.728004,212.4,72.768005,211.648,72.576004,210.191999L78.096004,210.191999C78.160004,209.968,78.208004,209.535999,78.208004,209.10399999999998C78.208004,206.608,76.928005,204.816,74.464005,204.816C72.33600200000001,204.816,70.288002,206.624,70.288002,209.52C70.288002,212.48,72.240005,214.224001,74.752003,214.224001ZM72.52800400000001,208.608C72.720005,207.312,73.552002,206.639999,74.496002,206.639999C75.664005,206.639999,76.192005,207.407999,76.192005,208.608L72.52800400000001,208.608ZM83.29600500000001,214.224001C84.224007,214.224001,85.120007,213.728001,85.776005,213.072001L85.840004,213.072001L86.016006,214L87.936005,214L87.936005,201.2319994L85.584007,201.2319994L85.584007,204.3839998L85.664005,205.79199979999999C85.024006,205.1999998,84.400005,204.816,83.39200600000001,204.816C81.472004,204.816,79.632004,206.608,79.632004,209.52C79.632004,212.464001,81.056004,214.224001,83.29600500000001,214.224001ZM83.90400700000001,212.288C82.720005,212.288,82.04800399999999,211.36,82.04800399999999,209.488C82.04800399999999,207.712,82.896004,206.752,83.90400700000001,206.752C84.48000300000001,206.752,85.04000500000001,206.927999,85.584007,207.424L85.584007,211.36C85.072006,212.032,84.52800400000001,212.288,83.90400700000001,212.288Z" fill="#854D0E" fill-opacity="1"/></g><path d="M184.3845929296875,32.09476989140625L178.5362929296875,29.02216744140625Q178.36021292968752,28.92965264140625,178.2329229296875,28.77679394140625Q178.1056529296875,28.62393524140625,178.04654292968752,28.43400434140625Q177.98744292968752,28.244073841406248,178.0055329296875,28.04598574140625Q178.02362292968752,27.84789754140625,178.1161329296875,27.67180924140625Q178.16194292968748,27.58461904140625,178.2238729296875,27.50804094140625Q178.2858129296875,27.43146324140625,178.3614929296875,27.36843964140625Q178.43718292968748,27.30541704140625,178.5237229296875,27.25837044140625Q178.6102429296875,27.21132424140625,178.70429292968748,27.18206264140625Q178.7983329296875,27.152801541406248,178.89628292968752,27.142449341406248Q178.9942229296875,27.13209724140625,179.0923129296875,27.14105224140625Q179.19040292968748,27.15000724140625,179.2848529296875,27.17792554140625Q179.3793029296875,27.20584344140625,179.4665029296875,27.25165174140625L187.4338229296875,31.43755704140625Q187.60991292968748,31.53007072140625,187.7371829296875,31.68292791140625Q187.8644729296875,31.83578515140625,187.9235529296875,32.02571493140625Q187.9826629296875,32.21564667140625,187.9645729296875,32.41373622440625Q187.9465029296875,32.61182576140625,187.8539729296875,32.78791541140625L183.6680729296875,40.75523374140625Q183.6222529296875,40.842423441406254,183.56032292968752,40.919001541406246Q183.4983729296875,40.99557874140625,183.4226929296875,41.05860234140625Q183.3470029296875,41.12162594140625,183.2604729296875,41.16867254140625Q183.17395292968752,41.21571824140625,183.0799129296875,41.24497984140625Q182.9858629296875,41.27424054140625,182.8879129296875,41.28459354140625Q182.7899629296875,41.29494474140625,182.6918829296875,41.28599074140625Q182.59379292968748,41.277034741406254,182.4993429296875,41.24911694140625Q182.4049029296875,41.22119904140625,182.3177129296875,41.17539124140625Q182.14161292968748,41.082876241406254,182.0143329296875,40.93001744140625Q181.8870529296875,40.777158741406254,181.8279529296875,40.587227841406246Q181.7688629296875,40.39729784140625,181.78695292968752,40.19920964140625Q181.8050429296875,40.00112154140625,181.8975529296875,39.82503274140625L184.9507029296875,34.01375134140625Q137.3278429296875,49.48179594140625,103.9193799296875,87.38347994140625Q69.4342985296875,126.50657694140625,60.6573324196875,177.66482494140624L58.6861327296875,177.32662494140624Q67.55898572968749,125.60948894140625,102.4190329296875,86.06100094140625Q136.2081989296875,47.72741594140625,184.3845929296875,32.09476989140625Z" fill-rule="evenodd" fill="#818CF8" fill-opacity="1"/><path d="M307.31099220859375,27.64824298671875L299.29643329859374,31.74297737671875Q299.21473168859376,31.78471970671875,299.14198958859373,31.840631906718748Q299.07304590859377,31.89362442671875,299.01428395859375,31.95772182671875Q298.9555220585938,32.02181923671875,298.9087058285937,32.09509736671875Q298.86188959859373,32.16837549671875,298.82842439859377,32.24863457671875Q298.7949592485937,32.32889368671875,298.7758497585937,32.41372451671875Q298.7567402085937,32.49855531671875,298.75255995859374,32.58541132871875Q298.74837970859375,32.67226733271875,298.75925427859374,32.75854122671875Q298.77012884859374,32.84481513671875,298.79573166859376,32.92791706671875Q298.82133459859375,33.01101901671875,298.8608972985937,33.08845439671875L298.86096208859374,33.08858117671875L302.95563510859375,41.10301208671875Q303.04613450859375,41.28014468671875,303.1975307085938,41.40916158671875Q303.34892700859376,41.53817848671875,303.53817150859373,41.59943768671875Q303.72741600859376,41.66069698671875,303.9256978085937,41.64487268671875Q304.12397960859374,41.62904738671875,304.30111220859374,41.53854748671875Q304.38881970859376,41.49373628671875,304.46609930859375,41.43267538671875Q304.54337880859373,41.37161448671875,304.60726120859374,41.29665088671875Q304.67114350859373,41.22168728671875,304.71917390859375,41.13570018671875Q304.76720430859376,41.04971508671875,304.79753680859375,40.95601078671875Q304.82786940859376,40.86230658671875,304.83933780859377,40.76448438671875Q304.8508062085937,40.66666218671875,304.84297080859375,40.56848338671875Q304.83513550859374,40.47030448671875,304.80829670859373,40.37554028671875Q304.7814579085937,40.28077698671875,304.7366476085937,40.19306988671875L301.7500443085938,34.34744448671875Q347.05224580859374,49.639014886718755,379.3668668085937,85.44824988671874Q412.7060738085937,122.39285288671876,422.83175380859376,170.84745388671874L424.78945380859375,170.43835388671874Q414.55314380859375,121.45439888671875,380.85168480859375,84.10834488671875Q348.16792680859373,47.89005988671875,302.33785580859376,32.43499077671875L308.22093300859376,29.42925568671875Q308.39806560859375,29.338756586718752,308.52708240859374,29.18736028671875Q308.65609930859375,29.03596398671875,308.71735860859377,28.84671948671875Q308.77861790859373,28.65747518671875,308.76279260859377,28.45919318671875Q308.74696830859375,28.26091198671875,308.6564693085937,28.08377888671875Q308.61165810859376,27.99607178671875,308.55059720859373,27.918792286718748Q308.48953630859376,27.84151268671875,308.41457270859377,27.77762988671875Q308.3396091085938,27.71374698671875,308.25362300859376,27.66571708671875Q308.16763690859375,27.61768628671875,308.07393260859374,27.58735368671875Q307.98022840859375,27.55702118671875,307.88240620859375,27.54555268671875Q307.78458500859375,27.534084286718752,307.68640610859376,27.54191968671875Q307.58822680859373,27.54975508671875,307.49346260859375,27.57659388671875Q307.39869880859374,27.60343268671875,307.31099220859375,27.64824298671875Z" fill-rule="evenodd" fill="#818CF8" fill-opacity="1"/></svg>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'rtt-preempt',
+            type: 'normal',
+            tag: '03 · RT-Thread',
+            title: '优先级抢占式调度',
+            content: `
+            <div class="grid-2">
+              <div>
+                <h3>核心机制</h3>
+                <ul class="bullet-list">
+                  <li><strong style="color:#6366f1;">256 级优先级</strong>（0 最高，255 最低）</li>
+                  <li><strong style="color:#6366f1;">抢占式调度</strong>：高优先级任务就绪时立即抢占 CPU</li>
+                  <li><strong style="color:#6366f1;">同优先级时间片轮转</strong>：RR 算法公平分配</li>
+                  <li><strong style="color:#6366f1;">调度器锁</strong>：可临时禁止调度但不关中断</li>
+                  <li><strong style="color:#6366f1;">两种抢占触发源</strong>：中断内唤醒 / 线程内 API 唤醒</li>
+                </ul>
+                <div style="background:rgba(241,245,249,0.5);border:1px solid #e9edf2;border-radius:12px;padding:18px 20px;margin-top:16px;">
+                  <div style="font-weight:600;color:#1e293b;font-size:.95em;margin-bottom:14px;text-align:center;">优先级就绪队列架构</div>
+                  <div style="display:flex;align-items:flex-start;gap:0;">
+                    <!-- 标志列 -->
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:46px;flex-shrink:0;">
+                      <div style="font-size:.78em;color:#64748b;font-weight:600;margin-bottom:4px;height:18px;">标志</div>
+                      <div style="width:30px;height:26px;background:#dbeafe;border:1px solid #93c5fd;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#1e40af;font-size:.85em;">1</div>
+                      <div style="width:30px;height:26px;background:#dbeafe;border:1px solid #93c5fd;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#1e40af;font-size:.85em;">1</div>
+                      <div style="width:30px;height:26px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#94a3b8;font-size:.85em;">0</div>
+                      <div style="color:#94a3b8;font-size:.75em;padding:3px 0;height:26px;display:flex;align-items:center;">⋮</div>
+                      <div style="width:30px;height:26px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#94a3b8;font-size:.85em;">0</div>
+                    </div>
+                    <!-- 箭头1 -->
+                    <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:22px;">
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#94a3b8;font-size:.75em;">⋮</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                    </div>
+                    <!-- 优先级列 -->
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;flex-shrink:0;">
+                      <div style="font-size:.78em;color:#64748b;font-weight:600;margin-bottom:4px;height:18px;">优先级</div>
+                      <div style="width:50px;height:26px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#3730a3;font-size:.8em;">0</div>
+                      <div style="width:50px;height:26px;background:#e0e7ff;border:1px solid #a5b4fc;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#3730a3;font-size:.8em;">1</div>
+                      <div style="width:50px;height:26px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#94a3b8;font-size:.8em;">2</div>
+                      <div style="color:#94a3b8;font-size:.75em;padding:3px 0;height:26px;display:flex;align-items:center;">⋮</div>
+                      <div style="width:50px;height:26px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#94a3b8;font-size:.8em;">31</div>
+                    </div>
+                    <!-- 箭头2 -->
+                    <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:22px;">
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#94a3b8;font-size:.75em;">⋮</div>
+                      <div style="height:26px;display:flex;align-items:center;color:#818cf8;font-weight:700;font-size:.85em;">→</div>
+                    </div>
+                    <!-- 线程链队列 -->
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;padding-top:22px;">
+                      <div style="height:26px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                        <span style="background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:2px 8px;font-size:.75em;font-weight:600;color:#166534;white-space:nowrap;">thread1#</span>
+                        <span style="color:#818cf8;font-weight:700;font-size:.8em;">→</span>
+                        <span style="background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:2px 8px;font-size:.75em;font-weight:600;color:#166534;white-space:nowrap;">thread2#</span>
+                        <span style="color:#818cf8;font-weight:700;font-size:.8em;">→</span>
+                        <span style="color:#94a3b8;font-size:.75em;">...</span>
+                      </div>
+                      <div style="height:26px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                        <span style="background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:2px 8px;font-size:.75em;font-weight:600;color:#166534;white-space:nowrap;">thread1#</span>
+                        <span style="color:#818cf8;font-weight:700;font-size:.8em;">→</span>
+                        <span style="background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:2px 8px;font-size:.75em;font-weight:600;color:#166534;white-space:nowrap;">thread2#</span>
+                        <span style="color:#818cf8;font-weight:700;font-size:.8em;">→</span>
+                        <span style="color:#94a3b8;font-size:.75em;">...</span>
+                      </div>
+                      <div style="height:26px;display:flex;align-items:center;">
+                        <span style="color:#cbd5e1;font-size:.75em;font-style:italic;">（空闲）</span>
+                      </div>
+                      <div style="height:26px;display:flex;align-items:center;color:#94a3b8;font-size:.75em;">⋮</div>
+                      <div style="height:26px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+                        <span style="background:#dcfce7;border:1px solid #86efac;border-radius:4px;padding:2px 8px;font-size:.75em;font-weight:600;color:#166534;white-space:nowrap;">...</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:.8em;color:#64748b;line-height:1.7;">
+                    <strong style="color:#475569;">位图</strong>：每一位标记对应优先级是否有就绪任务（1=有，0=无），通过前导零指令 <strong style="color:#475569;">O(1)</strong> 找到最高就绪优先级；<strong style="color:#475569;">就绪链表</strong>：同优先级任务挂在同一条链表上，按时间片轮转调度。
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3>调度器工作流程（两种抢占路径）</h3>
+
+                <!-- 路径1：中断触发抢占 -->
+                <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:14px 18px;margin-bottom:14px;">
+                  <div style="font-weight:600;color:#0369a1;font-size:.95em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#38bdf8;color:#fff;font-size:.75em;font-weight:700;">1</span>
+                    中断触发抢占（ISR 唤醒高优先级任务）
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#0c4a6e;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">中断触发</span>
+                      <span style="color:#38bdf8;font-weight:700;">→</span>
+                      <span style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:#9a3412;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">进入 ISR</span>
+                      <span style="color:#38bdf8;font-weight:700;">→</span>
+                      <span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#14532d;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">唤醒高优先级任务</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);color:#581c87;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">中断退出，内核触发调度</span>
+                      <span style="color:#38bdf8;font-weight:700;">→</span>
+                      <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#991b1b;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">上下文切换</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#991b1b;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">保存旧任务上下文</span>
+                      <span style="color:#38bdf8;font-weight:700;">→</span>
+                      <span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#14532d;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">恢复新任务上下文</span>
+                      <span style="color:#38bdf8;font-weight:700;">→</span>
+                      <span style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#0c4a6e;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">高优先级任务运行</span>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;font-size:.8em;color:#64748b;font-style:italic;">
+                    💡 典型场景：外部按键中断、定时器 Tick 中断中释放信号量唤醒任务
+                  </div>
+                </div>
+
+                <!-- 路径2：线程内API触发抢占 -->
+                <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:14px 18px;margin-bottom:14px;">
+                  <div style="font-weight:600;color:#166534;font-size:.95em;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#22c55e;color:#fff;font-size:.75em;font-weight:700;">2</span>
+                    线程内 API 触发抢占（低优先级线程唤醒高优先级任务）
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#14532d;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">低优先级任务运行中</span>
+                      <span style="color:#22c55e;font-weight:700;">→</span>
+                      <span style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);color:#9a3412;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">调用 API（释放信号量/发消息）</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#14532d;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">唤醒高优先级任务</span>
+                      <span style="color:#22c55e;font-weight:700;">→</span>
+                      <span style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.25);color:#581c87;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">API 返回前内核调用 rt_schedule()</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                      <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#991b1b;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">上下文切换</span>
+                      <span style="color:#22c55e;font-weight:700;">→</span>
+                      <span style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#991b1b;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">保存旧任务上下文</span>
+                      <span style="color:#22c55e;font-weight:700;">→</span>
+                      <span style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#14532d;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">恢复新任务上下文</span>
+                      <span style="color:#22c55e;font-weight:700;">→</span>
+                      <span style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:#0c4a6e;padding:5px 12px;border-radius:6px;font-size:.85em;font-weight:500;">高优先级任务运行</span>
+                    </div>
+                  </div>
+                  <div style="margin-top:10px;font-size:.8em;color:#64748b;font-style:italic;">
+                    💡 典型场景：采集任务处理完数据后发消息通知显示任务刷新界面
+                  </div>
+                </div>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'rtt-ipc',
+            type: 'normal',
+            tag: '03 · RT-Thread',
+            title: 'IPC 通信机制（燃气表场景举例）',
+            content: `
+            <div class="grid-3">
+              <div class="card border-purple">
+                <h4>🔒 互斥锁 Mutex</h4>
+                <p style="color:#475569;font-size:.95em;margin-bottom:6px;">保护共享资源</p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>Flash 读写保护</li>
+                  <li>燃气用量计数器</li>
+                  <li>阀门状态变量</li>
+                </ul>
+              </div>
+              <div class="card border-blue">
+                <h4>📨 消息队列 MessageQueue</h4>
+                <p style="color:#475569;font-size:.95em;margin-bottom:6px;">任务间异步通信</p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>GPRS 接收数据 → 解析任务</li>
+                  <li>按键事件 → 显示任务</li>
+                  <li>传感器数据 → 上报任务</li>
+                </ul>
+              </div>
+              <div class="card border-orange">
+                <h4>⏱️ 信号量 Semaphore</h4>
+                <p style="color:#475569;font-size:.95em;margin-bottom:6px;">同步与资源管理</p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>脉冲计数完成通知</li>
+                  <li>ADC 采样完成同步</li>
+                  <li>通信发送缓冲区管理</li>
+                </ul>
+              </div>
+            </div>
+            <div class="grid-2" style="margin-top:16px;">
+              <div class="code-block">
+                <div class="code-header"><span class="lang">C</span><span>互斥锁保护共享资源</span></div>
+                <pre><span class="kw">static</span> rt_mutex_t gas_mutex;
+gas_mutex = <span class="fn">rt_mutex_create</span>(<span class="str">"gas"</span>, RT_IPC_FLAG_PRIO);
+
+<span class="cm">/* 阀门任务中 */</span>
+<span class="fn">rt_mutex_take</span>(gas_mutex, RT_WAITING_FOREVER);
+gas_consumption += pulse_count;  <span class="cm">/* 临界区 */</span>
+<span class="fn">rt_mutex_release</span>(gas_mutex);</pre>
+              </div>
+              <div class="code-block">
+                <div class="code-header"><span class="lang">C</span><span>消息队列传递事件</span></div>
+                <pre><span class="kw">static</span> rt_mq_t key_mq;
+key_mq = <span class="fn">rt_mq_create</span>(<span class="str">"keymq"</span>, <span class="kw">sizeof</span>(<span class="ty">uint8_t</span>), <span class="num">10</span>, RT_IPC_FLAG_FIFO);
+
+<span class="cm">/* 中断中发送 */</span>
+<span class="ty">uint8_t</span> key_val = KEY_OK;
+<span class="fn">rt_mq_send</span>(key_mq, &key_val, <span class="kw">sizeof</span>(key_val));
+
+<span class="cm">/* 任务中接收 */</span>
+<span class="fn">rt_mq_recv</span>(key_mq, &key_val, <span class="kw">sizeof</span>(key_val), RT_WAITING_FOREVER);</pre>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'ch4',
+            type: 'chapter',
+            chapterNum: '04',
+            title: '三种架构横向对比',
+            desc: '从多个维度对比传统轮询、JIMU 链表调度、RT-Thread RTOS，给出选型建议。'
+        }, {
+            id: 'compare-all',
+            type: 'normal',
+            tag: '04 · 综合对比',
+            title: '三种架构全方位对比',
+            content: `
+            <table class="compare-table" style="font-size:.92em;">
+              <tr><th>对比维度</th><th>传统轮询</th><th>JIMU 链表调度</th><th>RT-Thread RTOS</th></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">调度算法</td><td>顺序遍历 O(n)</td><td>链表头取 O(1)</td><td class="highlight">优先级位图 O(1)</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">抢占式</td><td>❌ 协作式</td><td>❌ 协作式</td><td class="highlight">✅ 完全抢占</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">优先级</td><td>❌ 无</td><td>❌ 无（FIFO）</td><td class="highlight">✅ 256级</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">IPC 机制</td><td>❌ 无</td><td>⚠️ 仅延迟操作</td><td class="highlight">✅ 信号量/互斥锁/队列/事件</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">内存开销</td><td class="highlight">极小（仅标志数组）</td><td>小（静态链表）</td><td>中等（每任务独立栈）</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">代码复杂度</td><td class="highlight">极低</td><td>低</td><td>中等</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">实时性保障</td><td>❌ 无</td><td>⚠️ 有限</td><td class="highlight">✅ 确定性响应</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">低功耗支持</td><td>手动实现</td><td class="highlight">自动 WFI + 喂狗</td><td class="highlight">Tickless + PM 框架</td></tr>
+              <tr><td style="font-weight:600;color:#1e293b;">可扩展性</td><td>❌ 差</td><td>⚠️ 中等</td><td class="highlight">✅ 组件丰富</td></tr>
+            </table>
+          `
+        }, {
+            id: 'selection-guide',
+            type: 'normal',
+            tag: '04 · 选型建议',
+            title: '燃气表产品架构选型指南',
+            content: `
+            <div class="grid-3">
+              <div class="card border-green">
+                <h4>🟢 传统轮询</h4>
+                <p style="color:#475569;font-size:.9em;margin-bottom:8px;"><strong>适用场景：</strong></p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>基础款机械式燃气表</li>
+                  <li>功能单一（仅计量+阀门）</li>
+                  <li>MCU RAM < 2KB</li>
+                  <li>开发周期极短的项目</li>
+                </ul>
+              </div>
+              <div class="card border-purple" style="border-color:rgba(99,102,241,0.4);">
+                <h4>🔵 JIMU 架构</h4>
+                <p style="color:#475569;font-size:.9em;margin-bottom:8px;"><strong>适用场景：</strong></p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>智能燃气表主流方案</li>
+                  <li>多模块协作（GPRS+IRDA+Valve）</li>
+                  <li>需要任务状态管理</li>
+                  <li>RAM 2~8KB 的 MCU</li>
+                  <li>需低功耗 + 延迟操作</li>
+                </ul>
+              </div>
+              <div class="card border-orange">
+                <h4>🟠 RT-Thread</h4>
+                <p style="color:#475569;font-size:.9em;margin-bottom:8px;"><strong>适用场景：</strong></p>
+                <ul style="padding-left:16px;font-size:.9em;">
+                  <li>高端物联网燃气表</li>
+                  <li>复杂通信协议栈（MQTT/CoAP）</li>
+                  <li>多传感器融合处理</li>
+                  <li>RAM > 8KB 的 MCU</li>
+                  <li>需要 OTA / 文件系统</li>
+                </ul>
+              </div>
+            </div>
+            <div class="info-box" style="margin-top:20px;">
+              <p>💡 <strong>演进建议</strong>：从传统轮询 → JIMU 是第一步改进；当产品复杂度继续增长、需要真正的并发和丰富 IPC 时，可考虑迁移到 RT-Thread。</p>
+            </div>
+          `
+        }, {
+            id: 'roadmap',
+            type: 'normal',
+            tag: '04 · 总结',
+            title: '关键经验总结',
+            content: `
+            <div class="diagram-svg">
+              <svg viewBox="0 0 760 220" width="100%" style="max-width:720px;">
+                <rect x="20" y="30" width="200" height="150" rx="12" fill="rgba(34,197,94,0.08)" stroke="#22c55e" stroke-width="2"/>
+                <text x="120" y="85" text-anchor="middle" fill="#1e293b" font-size="16" font-weight="700">传统轮询</text>
+                <text x="120" y="115" text-anchor="middle" fill="#64748b" font-size="12">标志数组 + 主循环遍历</text>
+                <text x="120" y="140" text-anchor="middle" fill="#94a3b8" font-size="11">简单可靠 · O(n) 效率</text>
+
+                <rect x="290" y="30" width="200" height="150" rx="12" fill="rgba(99,102,241,0.08)" stroke="#818cf8" stroke-width="2"/>
+                <text x="390" y="85" text-anchor="middle" fill="#1e293b" font-size="16" font-weight="700">JIMU 链表调度</text>
+                <text x="390" y="115" text-anchor="middle" fill="#64748b" font-size="12">就绪链表 + 状态机</text>
+                <text x="390" y="140" text-anchor="middle" fill="#94a3b8" font-size="11">O(1) 效率 · 延迟操作</text>
+
+                <rect x="560" y="30" width="180" height="150" rx="12" fill="rgba(249,115,22,0.08)" stroke="#f97316" stroke-width="2"/>
+                <text x="650" y="85" text-anchor="middle" fill="#1e293b" font-size="16" font-weight="700">RT-Thread</text>
+                <text x="650" y="115" text-anchor="middle" fill="#64748b" font-size="12">优先级抢占 + IPC</text>
+                <text x="650" y="140" text-anchor="middle" fill="#94a3b8" font-size="11">完整 RTOS · 可扩展</text>
+              </svg>
+            </div>
+            <div style="margin-top:20px;">
+              <div class="info-box" style="margin-bottom:12px;">
+                <p style="font-size:1.05em;"><strong>① 共享变量的"读-改-写"必须临界保护</strong></p>
+                <p style="margin-top:4px;color:#475569;font-size:.92em;">主循环和中断同时操作 Task[] 标志位时，若不加关中断保护，会出现"读-改-写"竞态，导致中断置位被覆盖丢失。</p>
+              </div>
+              <div class="info-box" style="margin-bottom:12px;">
+                <p style="font-size:1.05em;"><strong>② 链表操作比数组遍历更适合任务调度</strong></p>
+                <p style="margin-top:4px;color:#475569;font-size:.92em;">数组轮询需要 O(n) 遍历所有任务，链表调度直接从 ReadyList 头部取任务，O(1) 即可完成调度，任务数量越多优势越明显。</p>
+              </div>
+              <div class="info-box">
+                <p style="font-size:1.05em;"><strong>③ 延迟操作机制解耦了中断上下文限制</strong></p>
+                <p style="margin-top:4px;color:#475569;font-size:.92em;">中断中只能做快速操作，通过 DelayedWork 队列将耗时处理推迟到主循环执行，既保证了中断响应速度，又避免了在中断上下文做复杂逻辑。</p>
+              </div>
+            </div>
+          `
+        }, {
+            id: 'end',
+            type: 'end',
+            content: `
+            <h1>感谢观看</h1>
+            <p class="subtitle">Q & A</p>
+            <div class="end-meta">
+              <p>燃气表嵌入式系统 · 任务机制讲解</p>
+              <p style="margin-top:4px;">传统轮询 → JIMU 链表调度 → RT-Thread RTOS</p>
+            </div>
+          `
+        }];
+
+        // ================================================================
+        //  渲染
+        // ================================================================
+        const navList = document.getElementById('navList');
+        const mainEl = document.getElementById('mainContent');
+
+        // 生成导航 & 内容
+        let navHtml = '';
+        let mainHtml = '';
+        const navItems = [];
+
+        sectionsData.forEach((sec, idx) => {
+            const id = sec.id || `sec-${idx}`;
+            const label = sec.navLabel || sec.title || sec.id || `第${idx+1}页`;
+
+            // 导航项
+            const isChapter = sec.type === 'chapter';
+            const isCover = sec.type === 'cover';
+            const isEnd = sec.type === 'end';
+            let navLabel = label;
+            if (isChapter) navLabel = `第${sec.chapterNum}章 · ${sec.title}`;
+            if (isCover) navLabel = '🏠 封面';
+            if (isEnd) navLabel = '🏁 结束';
+
+            navItems.push({ id, label: navLabel, idx });
+
+            const indexStr = String(idx + 1).padStart(2, '0');
+            navHtml += `
+            <li data-target="${id}" class="nav-item">
+              <span class="nav-index">${indexStr}</span>
+              <span class="nav-label">${navLabel}</span>
+            </li>
+          `;
+
+            // 内容
+            let cls = 'section';
+            if (sec.type === 'cover') cls += ' section-cover';
+            else if (sec.type === 'chapter') cls += ' section-chapter';
+            else if (sec.type === 'end') cls += ' section-end';
+
+            let html = `<section id="${id}" class="${cls}" data-index="${idx}">`;
+
+            if (sec.type === 'cover') {
+                html += sec.content;
+            } else if (sec.type === 'end') {
+                html += sec.content;
+            } else if (sec.type === 'chapter') {
+                html += `
+              <div class="chapter-num">${sec.chapterNum}</div>
+              <div class="chapter-title">${sec.title}</div>
+              <div class="chapter-desc">${sec.desc}</div>
+            `;
+            } else {
+                if (sec.tag) html += `<div class="tag">${sec.tag}</div>`;
+                if (sec.title) html += `<h2>${sec.title}</h2>`;
+                if (sec.subDesc) html += `<p class="sub-desc">${sec.subDesc}</p>`;
+                html += sec.content;
+            }
+
+            html += '</section>';
+            mainHtml += html;
+        });
+
+        navList.innerHTML = navHtml;
+        mainEl.innerHTML = mainHtml;
+
+        // ================================================================
+        //  导航高亮（Intersection Observer）
+        // ================================================================
+        const sections = document.querySelectorAll('.section');
+        const navItemsEl = document.querySelectorAll('.nav-item');
+
+        // 滚动锁：点击平滑滚动期间，阻止observer覆盖高亮
+        let scrollLock = false;
+        const observer = new IntersectionObserver((entries) => {
+            if (scrollLock) return; // 滚动动画期间不更新高亮
+            // 关键：遍历所有section，而不只是发生变化的entries
+            const allSections = document.querySelectorAll('.section');
+            const viewportH = window.innerHeight;
+            const visibleBottom = viewportH * 0.35; // 对应rootMargin底部-65%
+            let bestId = null;
+            let bestTop = Infinity;
+            allSections.forEach(sec => {
+                const rect = sec.getBoundingClientRect();
+                // section在可见区域内（顶部未超过可见区底部，且底部已进入视口）
+                if (rect.top < visibleBottom && rect.bottom > 0) {
+                    if (rect.top < bestTop) {
+                        bestTop = rect.top;
+                        bestId = sec.id;
+                    }
+                }
+            });
+            if (bestId) {
+                navItemsEl.forEach(el => {
+                    el.classList.toggle('active', el.dataset.target === bestId);
+                });
+            }
+        }, {
+            threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+            rootMargin: '0px 0px -65% 0px'
+        });
+
+        sections.forEach(sec => observer.observe(sec));
+
+        // ================================================================
+        //  导航点击滚动
+        // ================================================================
+        navItemsEl.forEach(el => {
+            el.addEventListener('click', () => {
+                const targetId = el.dataset.target;
+                const target = document.getElementById(targetId);
+                if (target) {
+                    // 点击时立即高亮，并加锁阻止滚动过程中observer覆盖
+                    navItemsEl.forEach(n => n.classList.toggle('active', n === el));
+                    scrollLock = true;
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    closeSidebar();
+                    // 平滑滚动动画约400-600ms，650ms后释放锁
+                    clearTimeout(window._navScrollTimer);
+                    window._navScrollTimer = setTimeout(() => { scrollLock = false; }, 650);
+                }
+            });
+        });
+
+        // ================================================================
+        //  移动端侧栏开关
+        // ================================================================
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('navToggle');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        overlay.addEventListener('click', closeSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 860) closeSidebar();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSidebar();
+        });
+
+        setTimeout(() => {
+            const first = document.querySelector('.nav-item');
+            if (first) first.classList.add('active');
+        }, 300);
+
+        console.log('✅ 任务机制讲解已加载，共 ' + sectionsData.length + ' 页');
+    </script>
+</body>
+</html>
