@@ -76,7 +76,7 @@ $(function() {
   }
 
     // 代码块复制按钮 & 展开按钮
-  $('.highlight').each(function() {
+  $('.marked-body .highlight, .article-entry .highlight, article .highlight, .content article .highlight').each(function() {
     var $block = $(this);
     var $expandBtn = $('<button class="expand-btn" type="button">展开</button>');
     var $copyBtn = $('<button class="copy-btn" type="button">复制</button>');
