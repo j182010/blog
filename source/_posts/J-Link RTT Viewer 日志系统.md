@@ -2,7 +2,7 @@
 title: J-Link RTT Viewer 日志系统
 date: 2026-06-19 09:00:00
 tags: [J-Link]
-categories: 调试工具
+categories: 调试
 ---
 
 <!-- toc -->

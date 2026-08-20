@@ -5640,24 +5640,32 @@ article .highlight .expand-btn {
   font-family: inherit;
 }
 
-.highlight .copy-btn {
+.marked-body .highlight .copy-btn,
+.article-entry .highlight .copy-btn,
+article .highlight .copy-btn {
   border-top-right-radius: 6px;
 }
 
-.highlight .expand-btn {
-  right: 60px;
+.marked-body .highlight .expand-btn,
+.article-entry .highlight .expand-btn,
+article .highlight .expand-btn {
+  right: 62px;   /* 按钮宽度 ~52px，留 10px 间距更稳 */
 }
-
-.highlight .copy-btn:hover,
-.highlight .expand-btn:hover {
+.marked-body .highlight .copy-btn:hover,
+.marked-body .highlight .expand-btn:hover,
+.article-entry .highlight .copy-btn:hover,
+.article-entry .highlight .expand-btn:hover,
+article .highlight .copy-btn:hover,
+article .highlight .expand-btn:hover {
   color: #ffffff;
   background-color: #3a3d41;
 }
 
-.highlight .copy-btn.copied {
+.marked-body .highlight .copy-btn.copied,
+.article-entry .highlight .copy-btn.copied,
+article .highlight .copy-btn.copied {
   color: #4ec9b0;
 }
-
 .marked-body .highlight.expanded,
 .article-entry .highlight.expanded,
 article .highlight.expanded {
@@ -5672,12 +5680,17 @@ article .highlight.expanded pre {
   max-height: none;
 }
 
-.highlight.expanded .expand-btn {
+.marked-body .highlight.expanded .expand-btn,
+.article-entry .highlight.expanded .expand-btn,
+article .highlight.expanded .expand-btn {
   color: #4ec9b0;
 }
-
-.highlight .copy-btn:focus,
-.highlight .expand-btn:focus {
+.marked-body .highlight .copy-btn:focus,
+.marked-body .highlight .expand-btn:focus,
+.article-entry .highlight .copy-btn:focus,
+.article-entry .highlight .expand-btn:focus,
+article .highlight .copy-btn:focus,
+article .highlight .expand-btn:focus {
   outline: none;
 }
 
