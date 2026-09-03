@@ -10,7 +10,7 @@
        <time datetime="<%= date_xml(post.date) %>" itemprop="datePublished"><%= date(post.date) %></time>
      </div>
      <h3 class="article-title" itemprop="name">
-       <a class="article-link" href="<%- url_for(post.path) %>"><%= post.title %></a>
+       <a class="article-link" href="<%- url_for(post.link || post.path) %>"><%= post.title %></a>
      </h3>
    </div>
    <% if (post.tags){ %>

@@ -205,7 +205,7 @@ profile:
   author: Jett
   author_title: Hello World, Jett Here.
   author_description: Eat. Sleep. Code. Repeat.
-  location:  China
+  location: 
   follow: https://blog.j182010.top
 
   # Social Links（links 置空则不显示社交图标
