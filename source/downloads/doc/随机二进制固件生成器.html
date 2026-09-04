@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>随机二进制固件生成器 | 单位可选 (B/KB/MB/GB)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f6 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .card {
+            max-width: 780px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f2b3d 0%, #1a3a4f 100%);
+            padding: 1.6rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .header h1:before {
+            content: "⚙️";
+            font-size: 1.8rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin-top: 0.5rem;
+            border-left: 3px solid #4c9aff;
+            padding-left: 0.75rem;
+        }
+
+        .content {
+            padding: 2rem 2rem 2rem 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1e2f3c;
+            font-size: 0.95rem;
+            background: #eef2f8;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+        }
+
+        .size-hint {
+            font-size: 0.75rem;
+            color: #5b6f82;
+            background: #f0f4f9;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            font-family: monospace;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f8fafd;
+            border: 1px solid #cfdfed;
+            border-radius: 1.25rem;
+            transition: all 0.2s;
+            padding: 0.2rem 0.2rem 0.2rem 1.2rem;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+            background: white;
+        }
+
+        #sizeValue {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 1.1rem;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace, 'Courier New';
+            padding: 0.9rem 0;
+            outline: none;
+            color: #0a1c2a;
+        }
+
+        .unit-select {
+            background: #e4ebf3;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1f4662;
+            cursor: pointer;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .unit-select:hover {
+            background: #d0dbe8;
+        }
+
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 1.2rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .quick-btn {
+            background: #ecf3f9;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.45rem 1rem;
+            border-radius: 2rem;
+            color: #1f4a6e;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .quick-btn:hover {
+            background: #d9e4ef;
+            transform: translateY(-1px);
+        }
+
+        .info-panel {
+            background: #f0f5fa;
+            border-radius: 1.2rem;
+            padding: 1rem 1.4rem;
+            margin: 1.5rem 0 1.8rem 0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #2c4b6e;
+        }
+
+        .info-value {
+            font-family: monospace;
+            font-weight: 500;
+            background: white;
+            padding: 0.2rem 0.7rem;
+            border-radius: 24px;
+            color: #0f3b5c;
+        }
+
+        .warning-msg {
+            font-size: 0.7rem;
+            margin-top: 0.6rem;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(98deg, #1e6f3f 0%, #15803d 100%);
+            border: none;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 8px 18px -8px rgba(21,128,61,0.3);
+            font-family: inherit;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            background: linear-gradient(98deg, #15803d 0%, #0f6a36 100%);
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            background: #9aaebf;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer-note {
+            margin-top: 1.6rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6f8faa;
+            border-top: 1px solid #e2edf5;
+            padding-top: 1.2rem;
+        }
+
+        @media (max-width: 550px) {
+            .content { padding: 1.5rem; }
+            .header { padding: 1.2rem 1.5rem; }
+            .quick-btn { padding: 0.35rem 0.8rem; font-size: 0.75rem; }
+            .unit-select { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h1>随机二进制固件生成器</h1>
+        <p>生成完全随机的 .bin 文件，支持任意大小，单位可选 (Bytes/KB/MB/GB)</p>
+    </div>
+
+    <div class="content">
+        <div class="input-group">
+            <div class="label-row">
+                <label>📦 固件大小</label>
+                <span class="size-hint">支持小数，如 1.5 MB</span>
+            </div>
+            <div class="input-wrapper">
+                <input type="number" id="sizeValue" value="100" step="any" placeholder="输入数值">
+                <select id="unitSelect" class="unit-select">
+                    <option value="B">Bytes</option>
+                    <option value="KB" selected>KB</option>
+                    <option value="MB">MB</option>
+                    <option value="GB">GB</option>
+                </select>
+            </div>
+            <div class="quick-buttons">
+                <button type="button" class="quick-btn" data-bytes="1024">1 KB</button>
+                <button type="button" class="quick-btn" data-bytes="10240">10 KB</button>
+                <button type="button" class="quick-btn" data-bytes="102400">100 KB</button>
+                <button type="button" class="quick-btn" data-bytes="1048576">1 MB</button>
+                <button type="button" class="quick-btn" data-bytes="10485760">10 MB</button>
+                <button type="button" class="quick-btn" data-bytes="104857600">100 MB</button>
+                <button type="button" class="quick-btn" data-bytes="524288000">500 MB</button>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-row">
+                <span class="info-label">实际字节数</span>
+                <span class="info-value" id="bytesPreview">100 KB (102400 字节)</span>
+            </div>
+            <div class="info-row" style="margin-top: 8px;">
+                <span class="info-label">⚠️ 注意</span>
+                <span class="info-value">大文件生成耗时 & 内存占用</span>
+            </div>
+            <div id="warningMessage" class="warning-msg" style="background: #eef6ee; color:#2b6e3c;">✅ 已支持任意大小，最大建议 ≤ 1GB</div>
+        </div>
+
+        <button id="generateBtn" class="generate-btn">
+            <span>🎲</span> 生成随机固件并下载
+        </button>
+
+        <div class="footer-note">
+            🔽 完全随机数据（0x00~0xFF），采用分段随机填充，无大小限制。<br>
+            📁 文件名: random_firmware_<字节数>_<时间戳>.bin
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const sizeInput = document.getElementById('sizeValue');
+        const unitSelect = document.getElementById('unitSelect');
+        const generateBtn = document.getElementById('generateBtn');
+        const bytesPreviewSpan = document.getElementById('bytesPreview');
+        const warningDiv = document.getElementById('warningMessage');
+
+        // 单位转换因子 (字节)
+        const unitFactors = {
+            'B': 1,
+            'KB': 1024,
+            'MB': 1024 * 1024,
+            'GB': 1024 * 1024 * 1024
+        };
+
+        // 格式化字节为人类可读
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 根据当前输入值和单位计算实际字节数
+        function getBytesFromInput() {
+            let rawValue = sizeInput.value.trim();
+            if (rawValue === '') return 0;
+            let num = parseFloat(rawValue);
+            if (isNaN(num) || !isFinite(num)) return 0;
+            if (num < 0) num = 0;
+            const unit = unitSelect.value;
+            const factor = unitFactors[unit];
+            let bytes = Math.floor(num * factor);
+            // 确保至少为1（如果用户输入大于0但乘完后为0，比如0.1 Bytes）
+            if (bytes < 1 && num > 0) bytes = 1;
+            return bytes;
+        }
+
+        // 根据字节数反向计算在当前单位下的显示值（用于快捷按钮）
+        function getDisplayValueFromBytes(bytes) {
+            const unit = unitSelect.value;
+            const factor = unitFactors[unit];
+            let value = bytes / factor;
+            // 保留合适的小数位数，避免过长
+            if (Number.isInteger(value)) {
+                return value;
+            } else {
+                return parseFloat(value.toFixed(6));
+            }
+        }
+
+        // 更新预览和警告
+        function updatePreviewAndWarnings() {
+            const bytes = getBytesFromInput();
+            if (bytes === 0 && parseFloat(sizeInput.value) !== 0) {
+                bytesPreviewSpan.innerText = `无效输入 (将使用默认值)`;
+                warningDiv.innerHTML = "⚠️ 请输入有效的正数";
+                warningDiv.style.background = "#fee2e2";
+                warningDiv.style.color = "#b91c1c";
+                return;
+            }
+            const human = formatBytes(bytes);
+            bytesPreviewSpan.innerText = `${human} (${bytes.toLocaleString()} 字节)`;
+            
+            if (bytes > 800 * 1024 * 1024) {
+                warningDiv.innerHTML = "⚠️ 极大文件（>800 MB），可能导致浏览器内存不足或响应缓慢，请确保内存充足。";
+                warningDiv.style.background = "#fee2e2";
+                warningDiv.style.color = "#b91c1c";
+            } else if (bytes > 300 * 1024 * 1024) {
+                warningDiv.innerHTML = "⚡ 文件大于 300 MB，生成可能需要数十秒，请耐心等待。";
+                warningDiv.style.background = "#fff3e0";
+                warningDiv.style.color = "#b45309";
+            } else if (bytes > 100 * 1024 * 1024) {
+                warningDiv.innerHTML = "📦 文件大于 100 MB，生成需要几秒钟，生成期间界面会暂时响应。";
+                warningDiv.style.background = "#fff3e0";
+                warningDiv.style.color = "#b45309";
+            } else {
+                warningDiv.innerHTML = "✅ 大小适中，可快速生成。";
+                warningDiv.style.background = "#eef6ee";
+                warningDiv.style.color = "#2b6e3c";
+            }
+        }
+
+        // 当用户改变数值或单位时，更新预览，并确保输入框的值保持在合理范围
+        function onUserChange() {
+            let raw = sizeInput.value.trim();
+            if (raw === '') return;
+            let num = parseFloat(raw);
+            if (isNaN(num)) {
+                sizeInput.value = '';
+                updatePreviewAndWarnings();
+                return;
+            }
+            // 允许负数或0？但字节必须正数，如果用户输入负数或0，强制置1? 不强制，只做提示，但生成时会处理
+            updatePreviewAndWarnings();
+        }
+
+        // 快捷按钮逻辑：传入字节数，自动设置当前单位下的数值并更新
+        function setByBytes(bytes) {
+            if (bytes <= 0) return;
+            const displayVal = getDisplayValueFromBytes(bytes);
+            sizeInput.value = displayVal;
+            updatePreviewAndWarnings();
+        }
+
+        // 事件绑定
+        sizeInput.addEventListener('input', onUserChange);
+        unitSelect.addEventListener('change', onUserChange);
+        
+        // 快捷按钮点击
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bytes = parseInt(btn.getAttribute('data-bytes'), 10);
+                if (!isNaN(bytes) && bytes > 0) {
+                    setByBytes(bytes);
+                }
+            });
+        });
+
+        // 初始化默认值：显示 100 KB
+        // 由于默认单位是 KB，数值为 100，实际字节 102400
+        onUserChange();
+
+        // ---------- Worker 核心：分段填充随机数据，绕过 64KB 限制 ----------
+        function createWorkerBlob() {
+            const workerCode = `
+                // 分段填充函数：兼容 crypto.getRandomValues 的限制（单次最大 65536 字节）
+                function fillRandomChunked(uint8Array, totalLength) {
+                    const CHUNK_SIZE = 65536;
+                    let offset = 0;
+                    while (offset < totalLength) {
+                        const remaining = totalLength - offset;
+                        const currentChunkSize = Math.min(CHUNK_SIZE, remaining);
+                        const chunkView = new Uint8Array(uint8Array.buffer, offset, currentChunkSize);
+                        if (self.crypto && self.crypto.getRandomValues) {
+                            self.crypto.getRandomValues(chunkView);
+                        } else {
+                            for (let i = 0; i < currentChunkSize; i++) {
+                                chunkView[i] = Math.floor(Math.random() * 256);
+                            }
+                        }
+                        offset += currentChunkSize;
+                    }
+                }
+
+                self.onmessage = function(e) {
+                    const size = e.data.size;
+                    try {
+                        const buffer = new ArrayBuffer(size);
+                        const uint8View = new Uint8Array(buffer);
+                        fillRandomChunked(uint8View, size);
+                        self.postMessage({ success: true, buffer: buffer }, [buffer]);
+                    } catch (err) {
+                        self.postMessage({ success: false, error: err.message });
+                    }
+                };
+            `;
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+            return URL.createObjectURL(blob);
+        }
+
+        function downloadBinFile(buffer, originalSize) {
+            const blob = new Blob([buffer], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 14);
+            const filename = `random_firmware_${originalSize}B_${timestamp}.bin`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 200);
+        }
+
+        let isGenerating = false;
+        let currentWorker = null;
+        let currentTimeout = null;
+
+        function cleanupGeneration() {
+            if (currentWorker) {
+                try { currentWorker.terminate(); } catch(e) {}
+                currentWorker = null;
+            }
+            if (currentTimeout) {
+                clearTimeout(currentTimeout);
+                currentTimeout = null;
+            }
+            isGenerating = false;
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = `<span>🎲</span> 生成随机固件并下载`;
+        }
+
+        async function generateFirmware() {
+            if (isGenerating) {
+                const confirmAbort = confirm("已有生成任务正在进行，是否中断并重新生成？");
+                if (confirmAbort) {
+                    cleanupGeneration();
+                } else {
+                    return;
+                }
+            }
+
+            let targetBytes = getBytesFromInput();
+            if (targetBytes <= 0) {
+                alert("请输入有效的正数大小");
+                sizeInput.focus();
+                return;
+            }
+            
+            // 安全上限：1.2 GB（防止彻底崩溃）
+            const MAX_SAFE = 1200 * 1024 * 1024; // 1.2 GB
+            if (targetBytes > MAX_SAFE) {
+                alert(`文件大小 ${formatBytes(targetBytes)} 超过 1.2 GB，浏览器可能无法分配内存，请减小尺寸。`);
+                return;
+            }
+            
+            if (targetBytes > 400 * 1024 * 1024) {
+                const ok = confirm(`您准备生成 ${formatBytes(targetBytes)} 的超大随机文件。\n生成过程可能消耗大量内存并导致页面卡顿，确定继续吗？`);
+                if (!ok) return;
+            }
+            
+            // 开始生成
+            isGenerating = true;
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<span class="spinner"></span> 正在生成随机数据 ... (0%)`;
+            
+            const startTime = performance.now();
+            
+            const workerUrl = createWorkerBlob();
+            currentWorker = new Worker(workerUrl);
+            
+            // 超时保护（超大文件可能会慢，设置 5 分钟）
+            currentTimeout = setTimeout(() => {
+                if (currentWorker) {
+                    currentWorker.terminate();
+                    currentWorker = null;
+                    if (isGenerating) {
+                        alert("生成超时（>5分钟），可能文件过大或设备性能不足，请尝试较小尺寸。");
+                        cleanupGeneration();
+                    }
+                }
+                URL.revokeObjectURL(workerUrl);
+            }, 300000); // 5分钟
+            
+            currentWorker.onmessage = (event) => {
+                clearTimeout(currentTimeout);
+                const result = event.data;
+                if (result.success && result.buffer) {
+                    const buffer = result.buffer;
+                    if (buffer.byteLength !== targetBytes) {
+                        alert(`生成失败: 大小不匹配 (预期 ${targetBytes}, 实际 ${buffer.byteLength})`);
+                        cleanupGeneration();
+                        URL.revokeObjectURL(workerUrl);
+                        return;
+                    }
+                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+                    downloadBinFile(buffer, targetBytes);
+                    console.log(`生成完成，耗时 ${elapsed} 秒，大小 ${formatBytes(targetBytes)}`);
+                    cleanupGeneration();
+                } else {
+                    const errMsg = result.error || "未知错误";
+                    alert(`生成随机固件失败: ${errMsg}\n请尝试较小尺寸或刷新页面重试。`);
+                    cleanupGeneration();
+                }
+                URL.revokeObjectURL(workerUrl);
+            };
+            
+            currentWorker.onerror = (err) => {
+                clearTimeout(currentTimeout);
+                console.error("Worker error:", err);
+                alert("生成过程出现内部错误，可能是内存不足。请减小文件尺寸后重试。");
+                cleanupGeneration();
+                URL.revokeObjectURL(workerUrl);
+            };
+            
+            currentWorker.postMessage({ size: targetBytes });
+        }
+        
+        generateBtn.addEventListener('click', generateFirmware);
+        sizeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !isGenerating) generateFirmware();
+        });
+        
+        window.addEventListener('beforeunload', () => {
+            if (currentWorker) currentWorker.terminate();
+        });
+    })();
+</script>
+</body>
+</html>
