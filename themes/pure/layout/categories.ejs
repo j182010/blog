@@ -1,3 +1,74 @@
+<style>
+/* 分类页卡片化样式（总览+详情共用） */
+.article-categories .panel {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(16,24,40,0.04);
+  overflow: hidden;
+  transition: all .25s ease;
+}
+.article-categories .panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px rgba(16,24,40,0.08), 0 4px 8px -4px rgba(16,24,40,0.05);
+  border-color: rgba(33,150,243,0.15);
+}
+.article-categories .panel-heading {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #eef2f7;
+}
+.article-categories .panel-title a {
+  color: #1e293b !important;
+  font-size: 17px;
+  font-weight: 600;
+}
+.article-categories .collection a.collection-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-bottom: 1px solid #f5f7fa;
+  color: #475569;
+  transition: all .15s ease;
+}
+.article-categories .collection .collection-item:last-child {
+  border-bottom: 0;
+}
+.article-categories .collection a.collection-item:hover {
+  background: #f0f7ff;
+  color: #2563eb !important;
+  padding-left: 24px;
+  transform: translateX(4px);
+}
+.article-categories .collection .collection-item time {
+  color: #94a3b8;
+  font-size: 13px;
+  flex: none;
+}
+.article-categories .okayNav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+}
+.article-categories .okayNav ul li a {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all .15s ease;
+}
+.article-categories .okayNav ul li a:hover {
+  background: #dbeafe;
+  color: #2563eb;
+}
+</style>
 <main class="main" role="main">
   <article class="article article-categories article-type-list" itemscope="">
     <header class="article-header">

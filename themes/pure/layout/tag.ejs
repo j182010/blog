@@ -1,3 +1,67 @@
+<style>
+/* 标签详情页卡片化样式 */
+.article-tags .okayNav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 16px 0;
+}
+.article-tags .okayNav ul li a {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all .15s ease;
+}
+.article-tags .okayNav ul li a:hover {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.article-tags .panel {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(16,24,40,0.04);
+  transition: all .2s ease;
+  overflow: hidden;
+}
+.article-tags .panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(16,24,40,0.1);
+  border-color: rgba(33,150,243,0.15);
+}
+.article-tags .panel-body {
+  padding: 14px 16px;
+}
+.article-tags .article-meta {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.article-tags .article-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+.article-tags .article-title a {
+  color: #1f2a37;
+}
+.article-tags .article-title a:hover {
+  color: #2196f3;
+}
+.article-tags .label {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+}
+</style>
 <main class="main" role="main">
   <article class="content article article-tags post-type-list" itemscope="">
     <header class="article-header">

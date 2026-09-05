@@ -21,7 +21,7 @@
   font-size: 18px;
   font-weight: 600;
 }
-.article-archives .collection-item {
+.article-archives .collection a.collection-item {
   display: flex;
   align-items: center;
   padding: 10px 18px;
@@ -29,15 +29,16 @@
   color: #475569;
   transition: all .15s ease;
 }
-.article-archives .collection-item:last-child {
+.article-archives .collection .collection-item:last-child {
   border-bottom: 0;
 }
-.article-archives .collection-item:hover {
+.article-archives .collection a.collection-item:hover {
   background: #f0f7ff;
-  color: #2563eb;
+  color: #2563eb !important;
   padding-left: 24px;
+  transform: translateX(4px);
 }
-.article-archives .collection-item time {
+.article-archives .collection .collection-item time {
   color: #94a3b8;
   font-size: 13px;
   flex: none;
