@@ -3,7 +3,13 @@
     <%- partial('article', {post: post, index: true}) %>
   <% }) %>
 <% } else { %>
-  <% var last; %>
+  <% var last;
+  var yearCounts = {};
+  page.posts.each(function(post){
+    var y = post.date.year();
+    yearCounts[y] = (yearCounts[y] || 0) + 1;
+  });
+  %>
   <% page.posts.each(function(post, i){ %>
     <% var year = post.date.year(); %>
     <% if (last != year){ %>
@@ -18,6 +24,7 @@
               <i class="icon icon-calendar-plus text-active"></i><i class="icon icon-calendar-minus text"></i>
               <%= year %>
             </a>
+            <span class="archive-count">(Total <%= yearCounts[year] %> articles)</span>
             <!-- <a href="<%- url_for(config.archive_dir + '/' + year) %>" class="archive-year"><%= year %></a> -->
           </h3>
         </div>

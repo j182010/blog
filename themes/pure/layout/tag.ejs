@@ -71,12 +71,41 @@
   color: #64748b;
   font-size: 11px;
 }
+.article-tags .tag-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  margin: 0 0 16px 0;
+  background: #f8fafc;
+  border-bottom: 1px solid #eef2f7;
+  border-radius: 8px;
+}
+.article-tags .tag-group-title .tag-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.article-tags .tag-group-title .tag-name i {
+  font-size: 16px;
+  color: #94a3b8;
+}
+.article-tags .tag-group-title .tag-count {
+  display: inline-block;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 8px;
+}
 </style>
 <main class="main" role="main">
   <article class="content article article-tags post-type-list" itemscope="">
     <header class="article-header">
-      <h1 itemprop="name" class="hidden-xs"><%= __('page.tag') + ': ' + page.tag %></h1>
-      <p class="text-muted hidden-xs"><%= _p('total.article', page.posts.length) %></p>
+      <h1 class="tag-group-title"><span class="tag-name"><i class="icon icon-tag"></i><%= page.tag %></span><span class="tag-count">(Total <%= page.posts.length %> articles)</span></h1>
       <nav role="navigation" id="nav-main" class="okayNav">
         <ul>
           <li><a href="<%= config.root %>tags"><%= __('nav.all') %></a></li>
