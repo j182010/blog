@@ -11,7 +11,7 @@ categories: 调试
 
 串口打印是嵌入式开发中最常见的调试手段，但在实际工程中越来越力不从心。
 
-<img src="/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-0.png" style="width: 800px;"><br>
+<img src="/images/J-Link%20RTT%20Viewer%20日志系统/0.png" style="width: 800px;"><br>
 
 1. **实时性杀手**：在调试中断处理程序、电机控制、无线通讯等对时序极为敏感的场景时，UART `printf` 通过轮询或中断发送一个字节往往要耗时数微秒到数毫秒。轻则导致通信丢帧，重则系统直接崩溃。**RTT 的写入操作本质上只是一次内存拷贝，延迟在纳秒级，甚至可以在中断服务函数（ISR）中直接安全调用。**
 
@@ -30,7 +30,7 @@ categories: 调试
 **J-Link RTT Viewer** 是 SEGGER 配套提供的 GUI 上位机工具，属于 J-Link 软件安装包自带程序（Windows / macOS / Linux 均支持）。
 
 <!-- 缩小图片尺寸 -->
-<img src="/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-4.png" style="width: 600px;">
+<img src="/images/J-Link%20RTT%20Viewer%20日志系统/4.png" style="width: 600px;">
 
 <!--
 居中显示图片
@@ -49,7 +49,7 @@ MCU 工程移植 SEGGER RTT 源码后，会在芯片 RAM 中创建 **RTT 控制�
 2. J-Link 通过已有的 SWD/JTAG 调试接口，**后台直接读取** MCU 内存中的缓冲区数据，全程**目标 CPU 不被 halt**；
 3. PC 端工具（RTT Viewer / RTT Client / Telnet 客户端）接收数据并展示；
 4. 同时支持反向写入**下行缓冲区（Down-channel，PC → Target）**，实现指令下发、双向交互。
-![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-5.png)
+![](/images/J-Link%20RTT%20Viewer%20日志系统/5.png)
 
 ### 3.2 无锁设计：读写指针的分工
 
@@ -117,7 +117,7 @@ Config/
 └── SEGGER_RTT_Conf.h         ← 配置文件（建议复制到工程配置目录）
 ```
 
-![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-6.png)
+![](/images/J-Link%20RTT%20Viewer%20日志系统/6.png)
 
 ### 5.3 初始化与打印
 
@@ -235,7 +235,7 @@ uLog 内部用 `CSI_START` / `CSI_END` 包裹 ANSI 颜色码（如 `\033[31m` �
 
 *图：uLog 输出的彩色分级日志，RTT Viewer 原生渲染 ANSI 颜色码。*
 
-![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-7.png)
+![](/images/J-Link%20RTT%20Viewer%20日志系统/7.png)
 
 ---
 
@@ -249,7 +249,7 @@ J-Link 软件在本地启动一个 **Telnet 服务**（默认 `127.0.0.1:19021`�
 
 *图：RTT Telnet 路径。*
 
-![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-2.png)
+![](/images/J-Link%20RTT%20Viewer%20日志系统/2.png)
 
 ### 7.2 Xshell 配置
 
@@ -269,7 +269,7 @@ Xshell 左侧菜单"日志记录" → 设置保存文件路径与时间戳格式
 
 *图：Xshell 连接 RTT Telnet 通道后的日志输出效果。*
 
-![](/images/J-Link%20RTT%20Viewer%20日志系统/J-Link%20RTT%20Viewer%20日志系统-1.png)
+![](/images/J-Link%20RTT%20Viewer%20日志系统/1.png)
 
 ---
 
