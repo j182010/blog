@@ -1,3 +1,83 @@
+<style>
+/* 侧边栏列表项 hover 灵动效果 */
+.sidebar .widget ul {
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none;
+}
+.sidebar .widget ul li {
+  transition: all .2s ease;
+}
+.sidebar .category-list-item,
+.sidebar .tag-list-item,
+.sidebar .archive-list-item {
+  padding: 5px 10px;
+  margin: 2px 0;
+  border-radius: 6px;
+  transition: all .2s ease;
+}
+.sidebar .category-list-item:hover,
+.sidebar .tag-list-item:hover,
+.sidebar .archive-list-item:hover {
+  background: #f0f7ff;
+  transform: translateX(4px);
+}
+.sidebar .category-list-link,
+.sidebar .tag-list-link,
+.sidebar .archive-list-link {
+  color: #475569 !important;
+  transition: color .2s ease;
+}
+.sidebar .category-list-item:hover .category-list-link,
+.sidebar .tag-list-item:hover .tag-list-link,
+.sidebar .archive-list-item:hover .archive-list-link {
+  color: #2563eb !important;
+}
+.sidebar .category-list-count,
+.sidebar .tag-list-count,
+.sidebar .archive-list-count {
+  transition: color .2s ease;
+}
+.sidebar .category-list-item:hover .category-list-count,
+.sidebar .tag-list-item:hover .tag-list-count,
+.sidebar .archive-list-item:hover .archive-list-count {
+  color: #2563eb !important;
+}
+/* 标签云 */
+.sidebar .tagcloud a {
+  display: inline-block;
+  padding: 2px 10px;
+  margin: 3px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #475569 !important;
+  text-decoration: none;
+  transition: all .2s ease;
+}
+.sidebar .tagcloud a:hover {
+  background: #dbeafe;
+  color: #2563eb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(33,150,243,0.15);
+}
+/* 最近文章列表 */
+.sidebar .recent-post-list li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: all .2s ease;
+}
+.sidebar .recent-post-list li:hover {
+  background: #f8fafc;
+  transform: translateX(3px);
+}
+.sidebar .recent-post-list .item-title a {
+  color: #1e293b !important;
+  transition: color .2s ease;
+}
+.sidebar .recent-post-list li:hover .item-title a {
+  color: #2196f3 !important;
+}
+</style>
 <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
   <div class="slimContent">
     <% theme.widgets.forEach(function(widget){ %>
