@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Unicode Emoji 表情符号 | 分类速查</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f6 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 1.5rem;
+        }
+
+        .card {
+            max-width: 860px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f2b3d 0%, #1a3a4f 100%);
+            padding: 1.6rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .header h1:before {
+            content: "🏰";
+            font-size: 1.8rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin-top: 0.5rem;
+            border-left: 3px solid #4c9aff;
+            padding-left: 0.75rem;
+        }
+
+        .content {
+            padding: 1.5rem 2rem 2rem;
+        }
+
+        .category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category:last-child {
+            margin-bottom: 0;
+        }
+
+        .category-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a3a4f;
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .category-title .count {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #94a3b8;
+            background: #f1f5f9;
+            padding: 0.1rem 0.5rem;
+            border-radius: 1rem;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+            gap: 0.05rem;
+        }
+
+        .emoji-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .emoji-item::after {
+            content: attr(data-name);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a3a4f;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.12s ease;
+            z-index: 100;
+            margin-bottom: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .emoji-item:hover::after {
+            opacity: 1;
+        }
+
+        .emoji-item:hover {
+            transform: scale(1.25);
+            z-index: 1;
+        }
+
+        .emoji-item:active {
+            transform: scale(1.05);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a3a4f;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>Unicode Emoji 表情符号</h1>
+            <p>按分类整理，点击任意符号即可复制</p>
+        </div>
+        <div class="content" id="content">
+            <!-- JS 动态渲染，勿手动编辑此区域 -->
+        </div>
+    </div>
+
+    <div class="toast" id="toast">已复制</div>
+
+    <script>
+        /* ============================================================
+           【后续添加 emoji 只改这里】
+           每个分类：{ name: '分类名', emojis: [ {emoji:'表情', name:'名称'}, ... ] }
+           新增分类：在数组末尾加一个 { name: 'xxx', emojis: [...] }
+           新增表情：在对应分类的 emojis 数组里加一个 {emoji:'xxx', name:'xxx'}
+           ============================================================ */
+        var categories = [
+            { name: '文档提示', emojis: [
+                {emoji:'💡', name:'tip 提示'},
+                {emoji:'📝', name:'note 笔记'},
+                {emoji:'ℹ️', name:'info 信息'},
+                {emoji:'⚠️', name:'warning 警告'},
+                {emoji:'🚨', name:'danger 危险'},
+                {emoji:'✅', name:'success 成功'},
+                {emoji:'❓', name:'question 疑问'},
+                {emoji:'🐛', name:'bug 问题'}
+            ]},
+            { name: '建筑', emojis: [
+                {emoji:'🏰', name:'城堡'},
+                {emoji:'🗽', name:'自由女神像'},
+                {emoji:'🏚', name:'废墟'},
+                {emoji:'🏩', name:'爱情旅馆'},
+                {emoji:'💒', name:'婚礼'},
+                {emoji:'⛪️', name:'教堂'},
+                {emoji:'🕌', name:'清真寺'},
+                {emoji:'🕍', name:'犹太教堂'},
+                {emoji:'🎢', name:'过山车'},
+                {emoji:'🏠', name:'房子'}
+            ]},
+            { name: '交通', emojis: [
+                {emoji:'🚦', name:'红绿灯'},
+                {emoji:'🚥', name:'横向红绿灯'},
+                {emoji:'🛻', name:'皮卡'},
+                {emoji:'🚌', name:'公交车'},
+                {emoji:'🛵', name:'摩托车'},
+                {emoji:'🚢', name:'轮船'},
+                {emoji:'⛵️', name:'帆船'},
+                {emoji:'🚛', name:'卡车'},
+                {emoji:'🚄', name:'高铁'},
+                {emoji:'🚴', name:'自行车'},
+                {emoji:'✈️', name:'飞机'}
+            ]},
+            { name: '昆虫动物鱼', emojis: [
+                {emoji:'🐇', name:'兔子'},
+                {emoji:'🐰', name:'兔头'},
+                {emoji:'🐶', name:'狗'},
+                {emoji:'🐈', name:'猫'},
+                {emoji:'🦒', name:'长颈鹿'},
+                {emoji:'🐄', name:'牛'},
+                {emoji:'🎠', name:'旋转木马'},
+                {emoji:'🐑ིྀ', name:'羊'},
+                {emoji:'🐼', name:'熊猫'},
+                {emoji:'🐯', name:'老虎'},
+                {emoji:'🐮', name:'奶牛'},
+                {emoji:'🐒', name:'猴子'},
+                {emoji:'😽', name:'亲亲猫'},
+                {emoji:'🕊️', name:'鸽子'},
+                {emoji:'🐳', name:'鲸鱼'},
+                {emoji:'🦋', name:'蝴蝶'},
+                {emoji:'🐟', name:'鱼'},
+                {emoji:'🐠', name:'热带鱼'},
+                {emoji:'🐝', name:'蜜蜂'},
+                {emoji:'🐛', name:'毛毛虫'},
+                {emoji:'🕸', name:'蜘蛛网'},
+                {emoji:'🕷️', name:'蜘蛛'},
+                {emoji:'🦔', name:'刺猬'},
+                {emoji:'🦕', name:'恐龙'}
+            ]},
+            { name: '奖牌', emojis: [
+                {emoji:'💯', name:'满分'},
+                {emoji:'🎖️', name:'军功章'},
+                {emoji:'🥇', name:'金牌'},
+                {emoji:'🏆', name:'奖杯'},
+                {emoji:'🥈', name:'银牌'},
+                {emoji:'🎉', name:'庆祝'},
+                {emoji:'💎', name:'钻石'},
+                {emoji:'💍', name:'戒指'}
+            ]},
+            { name: '闹钟铃铛', emojis: [
+                {emoji:'🔔', name:'铃铛'},
+                {emoji:'⏰', name:'闹钟'},
+                {emoji:'⌚️', name:'手表'}
+            ]},
+            { name: '书本笔记', emojis: [
+                {emoji:'📖', name:'打开的书'},
+                {emoji:'📚', name:'书本'},
+                {emoji:'📔', name:'笔记本'},
+                {emoji:'🧾', name:'收据'},
+                {emoji:'📓', name:'记事本'},
+                {emoji:'📘', name:'蓝色笔记本'},
+                {emoji:'📗', name:'绿色笔记本'},
+                {emoji:'📙', name:'橙色笔记本'},
+                {emoji:'📒', name:'账本'},
+                {emoji:'📜', name:'卷轴'},
+                {emoji:'📝', name:'备忘录'}
+            ]},
+            { name: '日历', emojis: [
+                {emoji:'📅', name:'日历'}
+            ]},
+            { name: '音乐', emojis: [
+                {emoji:'🎵', name:'音符'},
+                {emoji:'🎧', name:'耳机'},
+                {emoji:'🎸', name:'吉他'},
+                {emoji:'🎻', name:'小提琴'},
+                {emoji:'🎹', name:'钢琴'},
+                {emoji:'🥁', name:'鼓'},
+                {emoji:'🪘', name:'手鼓'},
+                {emoji:'🎙️', name:'麦克风'}
+            ]},
+            { name: '拍摄', emojis: [
+                {emoji:'🎬', name:'场记板'},
+                {emoji:'📷', name:'相机'}
+            ]},
+            { name: '箱包篮', emojis: [
+                {emoji:'🎒', name:'背包'},
+                {emoji:'🧺', name:'篮子'},
+                {emoji:'🛒', name:'购物车'},
+                {emoji:'🧧', name:'红包'},
+                {emoji:'🛍', name:'购物袋'}
+            ]},
+            { name: '信封', emojis: [
+                {emoji:'✉️', name:'信封'},
+                {emoji:'💌', name:'情书'},
+                {emoji:'📭', name:'空邮箱'}
+            ]},
+            { name: '餐盘', emojis: [
+                {emoji:'🍽', name:'餐具'},
+                {emoji:'🍴', name:'刀叉'},
+                {emoji:'🥄', name:'勺子'}
+            ]},
+            { name: '食物', emojis: [
+                {emoji:'🍜', name:'面条'},
+                {emoji:'🍚', name:'米饭'},
+                {emoji:'🍔', name:'汉堡'},
+                {emoji:'🥩', name:'牛排'},
+                {emoji:'🥯', name:'贝果'},
+                {emoji:'🥖', name:'法棍'},
+                {emoji:'🍕', name:'披萨'},
+                {emoji:'🍪', name:'饼干'},
+                {emoji:'🥨', name:'椒盐卷饼'}
+            ]},
+            { name: '鲜花植物', emojis: [
+                {emoji:'💐', name:'花束'},
+                {emoji:'🪷', name:'莲花'},
+                {emoji:'🌺', name:'木槿'},
+                {emoji:'🌼', name:'雏菊'},
+                {emoji:'🌻', name:'向日葵'},
+                {emoji:'🌷', name:'郁金香'},
+                {emoji:'🌸', name:'樱花'},
+                {emoji:'🌱', name:'幼苗'},
+                {emoji:'🎍', name:'松饰'},
+                {emoji:'🎋', name:'竹叶'},
+                {emoji:'🍃', name:'叶子'},
+                {emoji:'🍂', name:'落叶'},
+                {emoji:'🍁', name:'枫叶'},
+                {emoji:'🍄', name:'蘑菇'},
+                {emoji:'🥀', name:'枯萎玫瑰'},
+                {emoji:'🌹', name:'玫瑰'},
+                {emoji:'🌵', name:'仙人掌'},
+                {emoji:'🌴', name:'棕榈树'},
+                {emoji:'🎀', name:'蝴蝶结'},
+                {emoji:'🍀', name:'四叶草'},
+                {emoji:'☘️', name:'三叶草'},
+                {emoji:'🌾', name:'麦穗'},
+                {emoji:'🎄', name:'圣诞树'},
+                {emoji:'🪴', name:'盆栽'},
+                {emoji:'🌲', name:'松树'},
+                {emoji:'🌳', name:'落叶树'}
+            ]},
+            { name: '海边', emojis: [
+                {emoji:'🩱', name:'泳衣'},
+                {emoji:'👙', name:'比基尼'},
+                {emoji:'🏖', name:'海滩'},
+                {emoji:'🌊', name:'海浪'},
+                {emoji:'🩲', name:'泳裤'}
+            ]},
+            { name: '生病', emojis: [
+                {emoji:'😷', name:'口罩'},
+                {emoji:'🏥', name:'医院'},
+                {emoji:'💉', name:'打针'},
+                {emoji:'💊', name:'药丸'}
+            ]},
+            { name: '下雨天', emojis: [
+                {emoji:'☁️', name:'云'},
+                {emoji:'🌂', name:'雨伞'},
+                {emoji:'☔️', name:'下雨'},
+                {emoji:'💨', name:'风'}
+            ]},
+            { name: '符号', emojis: [
+                {emoji:'❗', name:'红色感叹号'},
+                {emoji:'❕', name:'白色感叹号'},
+                {emoji:'❓', name:'红色问号'},
+                {emoji:'❔', name:'白色问号'},
+                {emoji:'‼️', name:'双感叹号'},
+                {emoji:'⁉️', name:'感叹问号'}
+            ]},
+            { name: '成绩', emojis: [
+                {emoji:'💯', name:'满分'},
+                {emoji:'💢', name:'愤怒'},
+                {emoji:'✅', name:'勾选'},
+                {emoji:'❎', name:'叉选'},
+                {emoji:'✔', name:'勾'},
+                {emoji:'❌', name:'叉'},
+                {emoji:'⭕', name:'圆圈'}
+            ]},
+            { name: '通讯', emojis: [
+                {emoji:'📱', name:'手机'},
+                {emoji:'📲', name:'手机接收'},
+                {emoji:'📶', name:'信号强'},
+                {emoji:'📳', name:'信号中'},
+                {emoji:'📴', name:'无信号'},
+                {emoji:'☎', name:'电话'},
+                {emoji:'📞', name:'电话听筒'}
+            ]},
+            { name: '标志', emojis: [
+                {emoji:'📟', name:'传呼机'},
+                {emoji:'📠', name:'传真机'},
+                {emoji:'🤳', name:'自拍'},
+                {emoji:'♻', name:'回收'},
+                {emoji:'🏧', name:'ATM'},
+                {emoji:'🚮', name:'垃圾桶'},
+                {emoji:'🚰', name:'饮用水'},
+                {emoji:'♿', name:'无障碍'},
+                {emoji:'🚹', name:'男厕'},
+                {emoji:'🚺', name:'女厕'},
+                {emoji:'🚻', name:'卫生间'},
+                {emoji:'🚼', name:'婴儿室'},
+                {emoji:'🚾', name:'饮水处'},
+                {emoji:'⚠', name:'警告'},
+                {emoji:'🚸', name:'儿童'},
+                {emoji:'⛔', name:'禁止'},
+                {emoji:'🚫', name:'禁止'},
+                {emoji:'🚳', name:'禁止自行车'},
+                {emoji:'🚭', name:'禁止吸烟'},
+                {emoji:'🚯', name:'禁止乱扔'},
+                {emoji:'🚱', name:'非饮用水'},
+                {emoji:'🚷', name:'禁止行人'},
+                {emoji:'🔞', name:'成人'},
+                {emoji:'💈', name:'理发店'},
+                {emoji:'🚦', name:'红绿灯'}
+            ]},
+            { name: '数字序号', emojis: [
+                {emoji:'0⃣', name:'0'},
+                {emoji:'1⃣', name:'1'},
+                {emoji:'2⃣', name:'2'},
+                {emoji:'3⃣', name:'3'},
+                {emoji:'4⃣', name:'4'},
+                {emoji:'5⃣', name:'5'},
+                {emoji:'6⃣', name:'6'},
+                {emoji:'7⃣', name:'7'},
+                {emoji:'8⃣', name:'8'},
+                {emoji:'9⃣', name:'9'},
+                {emoji:'🔟', name:'10'}
+            ]},
+            { name: '指示符号', emojis: [
+                {emoji:'⬆️', name:'向上'},
+                {emoji:'⬇️', name:'向下'},
+                {emoji:'↙️', name:'左下'},
+                {emoji:'⬅️', name:'向左'},
+                {emoji:'↖️', name:'左上'},
+                {emoji:'🔙', name:'返回'},
+                {emoji:'🔚', name:'结束'},
+                {emoji:'🔛', name:'开启'},
+                {emoji:'🔜', name:'马上'},
+                {emoji:'🔝', name:'顶部'}
+            ]},
+            { name: '手势符号', emojis: [
+                {emoji:'👌', name:'OK'},
+                {emoji:'🤏', name:'捏'},
+                {emoji:'👍', name:'赞'},
+                {emoji:'👇', name:'向下指'},
+                {emoji:'👆', name:'向上指'},
+                {emoji:'🤝', name:'握手'},
+                {emoji:'💪', name:'肌肉'},
+                {emoji:'🤞', name:'交叉手指'}
+            ]},
+            { name: '场所符号', emojis: [
+                {emoji:'🏖', name:'海滩'},
+                {emoji:'🏕', name:'露营'},
+                {emoji:'🏝', name:'海岛'},
+                {emoji:'🏥', name:'医院'},
+                {emoji:'🏫', name:'学校'},
+                {emoji:'🏦', name:'银行'},
+                {emoji:'🏪', name:'商店'},
+                {emoji:'🌍', name:'地球'},
+                {emoji:'🚘', name:'汽车'},
+                {emoji:'🚗', name:'轿车'},
+                {emoji:'🏍', name:'摩托车'},
+                {emoji:'🚄', name:'高铁'},
+                {emoji:'🚑', name:'救护车'},
+                {emoji:'🚢', name:'轮船'},
+                {emoji:'✈️', name:'飞机'},
+                {emoji:'🧳', name:'行李箱'},
+                {emoji:'⛽', name:'加油站'},
+                {emoji:'📍', name:'定位'}
+            ]},
+            { name: '天气图标', emojis: [
+                {emoji:'🌞', name:'笑脸太阳'},
+                {emoji:'🌟', name:'星星'},
+                {emoji:'🌙', name:'月亮'},
+                {emoji:'☀', name:'太阳'},
+                {emoji:'🌧', name:'下雨'},
+                {emoji:'🌦', name:'阵雨'},
+                {emoji:'⛈️', name:'雷暴'},
+                {emoji:'⚡', name:'闪电'},
+                {emoji:'❄', name:'雪花'},
+                {emoji:'☃️', name:'雪人'},
+                {emoji:'☔', name:'下雨'},
+                {emoji:'🔥', name:'火焰'},
+                {emoji:'🌀', name:'台风'},
+                {emoji:'🌪', name:'龙卷风'}
+            ]},
+            { name: '心情表达', emojis: [
+                {emoji:'💢', name:'愤怒'},
+                {emoji:'💥', name:'爆炸'},
+                {emoji:'🉐', name:'可'},
+                {emoji:'🤬', name:'怒骂'}
+            ]}
+        ];
+
+        /* ===== 以下是渲染逻辑，一般不用改 ===== */
+        (function() {
+            var content = document.getElementById('content');
+            var toast = document.getElementById('toast');
+            var toastTimer = null;
+
+            // 渲染所有分类
+            categories.forEach(function(cat) {
+                var section = document.createElement('div');
+                section.className = 'category';
+
+                var title = document.createElement('div');
+                title.className = 'category-title';
+                title.innerHTML = cat.name + '<span class="count">' + cat.emojis.length + '</span>';
+                section.appendChild(title);
+
+                var grid = document.createElement('div');
+                grid.className = 'emoji-grid';
+
+                cat.emojis.forEach(function(item) {
+                    var el = document.createElement('div');
+                    el.className = 'emoji-item';
+                    el.setAttribute('data-emoji', item.emoji);
+                    el.setAttribute('data-name', item.name);
+                    el.textContent = item.emoji;
+                    grid.appendChild(el);
+                });
+
+                section.appendChild(grid);
+                content.appendChild(section);
+            });
+
+            // 点击复制（事件委托）
+            content.addEventListener('click', function(e) {
+                var item = e.target.closest('.emoji-item');
+                if (!item) return;
+                var emoji = item.getAttribute('data-emoji');
+                var name = item.getAttribute('title');
+                copyText(emoji);
+                showToast('已复制：' + emoji + ' ' + name);
+            });
+
+            function copyText(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).catch(function() {
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
+            }
+
+            function fallbackCopy(text) {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(function() {
+                    toast.classList.remove('show');
+                }, 1500);
+            }
+        })();
+    </script>
+
+</body>
+</html>

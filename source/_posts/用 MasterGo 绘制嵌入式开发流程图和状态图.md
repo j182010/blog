@@ -13,4 +13,6 @@ MasterGo（莫高设计）是国产云端 UI/UX 设计 + 产设研协同平台�
 
 <!-- ![充电桩UI流程图](/downloads/images/STD01_V1.1.webp) -->
 *以下为实际项目中的充电桩 UI 状态流程图：*
-<img src="/downloads/images/STD01_V1.1.webp" alt="充电桩UI流程图" style="max-width:100%; border-radius:6px;" />
+<img src="/downloads/images/STD01_V1.1.webp" alt="充电桩UI流程图" style="max-width:100%; border-radius:6px;" /><br>
+<br>
+<img src="/downloads/images/A5115-EVH001 V1.0.webp" alt="充电桩UI流程图" style="max-width:100%; border-radius:6px;" />

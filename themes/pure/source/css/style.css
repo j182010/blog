@@ -9712,3 +9712,14 @@ body.theme-black .marked-body a.doc-card {
 .theme-black .marked-body a.doc-card .doc-desc {
   color: #888;
 }
+/* ===== 自定义章节标题：左侧竖条 + 底部下划线 ===== */
+.section-title {
+  border-left: 4px solid #2196F3;
+  border-bottom: 2px solid #2196F3;
+  padding: 6px 14px;
+  margin: 18px 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #1A1A1A;
+  line-height: 1.6;
+}
