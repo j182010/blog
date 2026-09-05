@@ -52,7 +52,7 @@
   <% } %>
   <%- css('css/style') %>
   <% if (page.mathjax) { %>
-    <link href="//cdn.jsdelivr.net/npm/katex@0.9.0/dist/katex.min.css" rel="stylesheet">
+    <%- partial('_script/mathjax', {display_align: page.mathjax_align || (theme.mathjax && theme.mathjax.displayAlign) || 'center'}) %>
   <% } %>
   <% if (theme.comment.type === 'gitment' && !is_home() && !is_category() && !is_tag() && !is_archive() && post.comments) { %>
     <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitment@0.0.3/style/default.min.css">
