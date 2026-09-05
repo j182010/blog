@@ -86,6 +86,15 @@ index_generator:
   per_page: 10
   order_by: -date
 
+# Archive page setting
+# 归档页单独配置，每页显示更多文章，避免底部大量空白就翻页
+archive_generator:
+  per_page: 50
+  yearly: true
+  monthly: true
+  daily: false
+  order_by: -date
+
 # Category & Tag
 default_category: uncategorized
 category_map:
