@@ -10,20 +10,47 @@
     $main.parent().remove('.ins-search');
     $('body').append($main);
 
+    // 需要从搜索结果中排除的页面路径前缀（菜单已隐藏的页面、归档页等）
+    var EXCLUDED_PAGE_PATHS = ['books/', 'categories/', 'tags/', 'repository/', 'about/'];
+
+    function escapeHtml (text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // 对文本中的关键词进行高亮（先转义HTML再高亮，防止XSS）
+    function highlight (text, keywords) {
+        if (!text) return '';
+        var escaped = escapeHtml(text);
+        var keywordArray = parseKeywords(keywords);
+        keywordArray.forEach(function (keyword) {
+            if (!keyword) return;
+            var escapedKeyword = escapeHtml(keyword).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            var regex = new RegExp('(' + escapedKeyword + ')', 'gi');
+            escaped = escaped.replace(regex, '<mark class="ins-highlight">$1</mark>');
+        });
+        return escaped;
+    }
+
     function section (title) {
         return $('<section>').addClass('ins-section')
             .append($('<header>').addClass('ins-section-header').text(title));
     }
 
-    function searchItem (icon, title, slug, preview, url) {
+    function searchItem (icon, title, slug, preview, url, keywords) {
         return $('<div>').addClass('ins-selectable').addClass('ins-search-item')
-            .append($('<header>').append($('<i>').addClass('icon').addClass('icon-' + icon)).append(title != null && title != '' ? title : CONFIG.TRANSLATION['UNTITLED'])
+            .append($('<header>').append($('<i>').addClass('icon').addClass('icon-' + icon)).append(title != null && title != '' ? highlight(title, keywords) : CONFIG.TRANSLATION['UNTITLED'])
                 .append(slug ? $('<span>').addClass('ins-slug').text(slug) : null))
-            .append(preview ? $('<p>').addClass('ins-search-preview').text(preview) : null)
+            .append(preview ? $('<p>').addClass('ins-search-preview').html(highlight(preview, keywords)) : null)
             .attr('data-url', url);
     }
 
-    function sectionFactory (type, array) {
+    function sectionFactory (type, array, keywords) {
         var sectionTitle;
         var $searchItems;
         if (array.length === 0) return null;
@@ -33,13 +60,18 @@
             case 'PAGES':
                 $searchItems = array.map(function (item) {
                     // Use config.root instead of permalink to fix url issue
-                    return searchItem('file', item.title, null, item.text.slice(0, 150), CONFIG.ROOT_URL + item.path);
+                    return searchItem('file', item.title, null, item.text.slice(0, 150), CONFIG.ROOT_URL + item.path, keywords);
                 });
                 break;
             case 'CATEGORIES':
             case 'TAGS':
                 $searchItems = array.map(function (item) {
-                    return searchItem(type === 'CATEGORIES' ? 'folder' : 'tag', item.name, item.slug, null, item.permalink);
+                    // 用相对路径而非permalink（permalink含完整域名，本地访问会跳转线上）
+                    var typePath = type === 'CATEGORIES' ? 'categories' : 'tags';
+                    var url = CONFIG.ROOT_URL + typePath + '/' + item.slug + '/';
+                    // 括号里显示文章数量，而非重复的slug
+                    var countLabel = item.count ? String(item.count) : null;
+                    return searchItem(type === 'CATEGORIES' ? 'folder' : 'tag', item.name, countLabel, null, url, keywords);
                 });
                 break;
             default:
@@ -54,7 +86,11 @@
         entries.forEach(function (entry) {
             if (entry[key]) {
                 entry[key].forEach(function (value) {
-                    values[value.name] = value;
+                    if (!values[value.name]) {
+                        values[value.name] = value;
+                        values[value.name].count = 0;
+                    }
+                    values[value.name].count++;
                 });
             }
         });
@@ -149,25 +185,42 @@
         };
     }
 
+    // 判断页面是否应该被排除
+    function isExcludedPage (page) {
+        return EXCLUDED_PAGE_PATHS.some(function (prefix) {
+            return page.path && page.path.indexOf(prefix) === 0;
+        });
+    }
+
     function search (json, keywords) {
         var WEIGHTS = weightFactory(keywords);
         var FILTERS = filterFactory(keywords);
         var posts = json.posts;
-        var pages = json.pages;
+        // 过滤掉不需要的页面（书单、分类、标签、项目等归档/隐藏页）
+        var pages = json.pages.filter(function (page) {
+            return !isExcludedPage(page);
+        });
         var tags = extractToSet(json, 'tags');
         var categories = extractToSet(json, 'categories');
         return {
             posts: posts.filter(FILTERS.POST).sort(function (a, b) { return WEIGHTS.POST(b) - WEIGHTS.POST(a); }).slice(0, 5),
             pages: pages.filter(FILTERS.PAGE).sort(function (a, b) { return WEIGHTS.PAGE(b) - WEIGHTS.PAGE(a); }).slice(0, 5),
-            categories: categories.filter(FILTERS.CATEGORY).sort(function (a, b) { return WEIGHTS.CATEGORY(b) - WEIGHTS.CATEGORY(a); }).slice(0, 5),
-            tags: tags.filter(FILTERS.TAG).sort(function (a, b) { return WEIGHTS.TAG(b) - WEIGHTS.TAG(a); }).slice(0, 5)
+            categories: categories.filter(FILTERS.CATEGORY).sort(function (a, b) { return WEIGHTS.CATEGORY(b) - WEIGHTS.CATEGORY(a); }),
+            tags: tags.filter(FILTERS.TAG).sort(function (a, b) { return WEIGHTS.TAG(b) - WEIGHTS.TAG(a); })
         };
     }
 
-    function searchResultToDOM (searchResult) {
+    function searchResultToDOM (searchResult, keywords) {
         $container.empty();
+        var hasResult = false;
         for (var key in searchResult) {
-            $container.append(sectionFactory(key.toUpperCase(), searchResult[key]));
+            if (searchResult[key].length > 0) {
+                hasResult = true;
+                $container.append(sectionFactory(key.toUpperCase(), searchResult[key], keywords));
+            }
+        }
+        if (!hasResult && keywords && keywords.trim()) {
+            $container.append('<div class="ins-no-result">没有找到与 "' + escapeHtml(keywords) + '" 相关的内容</div>');
         }
     }
 
@@ -211,7 +264,7 @@
         }
         $input.on('input', function () {
             var keywords = $(this).val();
-            searchResultToDOM(search(json, keywords));
+            searchResultToDOM(search(json, keywords), keywords);
         });
         $input.trigger('input');
     });

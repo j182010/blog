@@ -9723,3 +9723,75 @@ body.theme-black .marked-body a.doc-card {
   color: #1A1A1A;
   line-height: 1.6;
 }
+/* ===== 搜索功能优化 ===== */
+
+/* 关键词高亮 */
+.ins-highlight {
+  background: #fff3a0;
+  color: #1a1a1a;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.ins-section .ins-search-item:hover .ins-highlight,
+.ins-section .ins-search-item.active .ins-highlight {
+  background: #ffd54f;
+  color: #1a1a1a;
+}
+
+/* 空结果提示 */
+.ins-no-result {
+  padding: 40px 20px;
+  text-align: center;
+  color: #9a9a9a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 弹窗容器优化：圆角+阴影 */
+.ins-search-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* 搜索输入框优化 */
+.ins-search-input {
+  font-weight: 400;
+  padding: 14px 40px 14px 20px;
+}
+
+/* 搜索结果区域优化 */
+.ins-section-container {
+  background: #fff;
+}
+.ins-section .ins-section-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 10px 16px 6px;
+  border-bottom: none;
+  color: #b0b0b0;
+  text-transform: uppercase;
+}
+.ins-section .ins-section-header,
+.ins-section .ins-search-item {
+  padding: 10px 16px;
+}
+.ins-section .ins-search-item .ins-search-preview {
+  height: 18px;
+  font-size: 12px;
+  line-height: 18px;
+  margin: 4px 0 0 24px;
+  color: #a0a0a0;
+}
+.ins-section .ins-search-item header .icon {
+  margin-right: 10px;
+  font-size: 14px;
+  color: #c0c0c0;
+}
+.ins-section .ins-search-item:hover header .icon,
+.ins-section .ins-search-item.active header .icon {
+  color: #fff;
+  opacity: 0.8;
+}
