@@ -1,0 +1,10 @@
+<% if (typeof(script) !== 'undefined' && script) { %>
+  <script src="https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js"></script>
+  <script type="text/javascript">
+    twikoo.init({
+      envId: '<%= theme.comment.twikoo.envId %>',
+      el: '#tcomment',
+      lang: 'zh-CN'
+    });
+  </script>
+<% } %>

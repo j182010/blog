@@ -1,4 +1,4 @@
-<% if (post.comments) { %>
+﻿<% if (theme.comment.enable && post.comments) { %>
   <section id="comments">
   	<% if (theme.comment.type === 'disqus') { %>
       <div id="disqus_thread">
@@ -16,6 +16,8 @@
            
     <% } else if (theme.comment.type === 'valine') { %>
       <div id="vcomments"></div>
+    <% } else if (theme.comment.type === 'twikoo') { %>
+      <div id="tcomment"></div>
     <% } %>
   </section>
 <% } %>

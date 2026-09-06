@@ -1,3 +1,4 @@
+﻿<% if (theme.comment.enable) { %>
 <% if (theme.comment.type === 'disqus') { %>
     <%- partial('_script/_comment/disqus', { script: true }) %>
 <% } else if (theme.comment.type === 'youyan') { %>
@@ -10,4 +11,7 @@
     <%- partial('_script/_comment/gitalk', { script: true }) %>      
 <% } else if (theme.comment.type === 'valine') { %>
     <%- partial('_script/_comment/valine', { script: true }) %>     
+<% } else if (theme.comment.type === 'twikoo') { %>
+    <%- partial('_script/_comment/twikoo', { script: true }) %>
+<% } %>
 <% } %>
