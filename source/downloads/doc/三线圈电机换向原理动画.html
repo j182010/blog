@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>三线圈电机换向原理动画 | 有刷电机</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f6 100%);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 1.5rem;
+        }
+
+        .card {
+            max-width: 720px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f2b3d 0%, #1a3a4f 100%);
+            padding: 1.6rem 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .header h1:before {
+            content: "🧲";
+            font-size: 1.6rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .header p {
+            font-size: 0.88rem;
+            opacity: 0.85;
+            margin-top: 0.6rem;
+            border-left: 3px solid #4c9aff;
+            padding-left: 0.75rem;
+            line-height: 1.7;
+        }
+
+        .content {
+            padding: 1.5rem 2rem 2rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            max-width: 460px;
+            height: auto;
+            margin: 0 auto;
+            border-radius: 12px;
+            background: #fafbfd;
+        }
+
+        #status {
+            margin: 12px 0;
+            padding: 12px 14px;
+            background: rgba(155, 187, 244, 0.12);
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.8;
+            min-height: 60px;
+            color: #1A1B1C;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .controls button {
+            min-height: 44px;
+            padding: 0 18px;
+            border: 1px solid #d8dce3;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 13px;
+            color: #1A1B1C;
+            cursor: pointer;
+            transition: all .18s ease;
+            font-family: inherit;
+        }
+
+        .controls button:hover {
+            background: #f0f7ff;
+            border-color: #4c9aff;
+            color: #1a5fb4;
+        }
+
+        .controls button:active {
+            transform: scale(0.97);
+        }
+
+        .speed {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #6B7280;
+            margin-left: 4px;
+        }
+
+        .speed input[type="range"] {
+            width: 120px;
+            height: 44px;
+            accent-color: #4c9aff;
+        }
+
+        .footer-note {
+            font-size: 12px;
+            color: #6B7280;
+            line-height: 1.7;
+            border-top: 1px solid #eceff3;
+            padding-top: 12px;
+            margin-top: 4px;
+        }
+
+        .footer-note b {
+            color: #1A1B1C;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>有刷电机 · 三线圈换向原理</h1>
+            <p>定子两块永磁铁固定（上 N 下 S）；转子 3 组线圈互成 120°，任意时刻 <b>2 组通电（一个 N 一个 S）、1 组悬空</b>。换向器 3 片铜片随转子旋转，把通电组合依次切到下一组，磁极对位置跟着转，转子持续同向转动。（示意动画）</p>
+        </div>
+        <div class="content">
+            <canvas id="m"></canvas>
+            <div id="status"></div>
+            <div class="controls">
+                <button id="play">暂停</button>
+                <button id="flip">调换电源正负极</button>
+                <button id="reset">重置</button>
+                <div class="speed">转速
+                    <input id="spd" type="range" min="10" max="160" value="45">
+                </div>
+            </div>
+            <div class="footer-note">任意时刻都是 <b>1 个 N + 1 个 S（两个通电线圈）+ 1 个悬空</b>；换向器切换的是「哪两个线圈通电」，磁极对位置跟着转子转。点「调换电源」：电流方向全反、N/S 互换、磁极对反向，转子就反转。</div>
+        </div>
+    </div>
+    <script>
+    (function(){
+        try{
+            var cv=document.getElementById('m'); if(!cv) return;
+            var ctx=cv.getContext('2d'); if(!ctx) return;
+            var W=440,H=440,CX=220,CY=220,SEG=120,HALF=59,B1=30,B2=150;
+            var dpr=window.devicePixelRatio||1;
+            cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+            var theta=0,playing=true,reversed=false,spd=45,last=performance.now(),prevP1=0,prevP2=1;
+            var names=['A','B','C'];
+            var elPlay=document.getElementById('play'),elFlip=document.getElementById('flip'),elReset=document.getElementById('reset'),elSpd=document.getElementById('spd'),st=document.getElementById('status');
+            function norm(a){a%=360;if(a<0)a+=360;return a;}
+            function segAt(ang){for(var i=0;i<3;i++){var c=norm(theta+i*SEG),d=Math.abs(norm(ang-c));if(d<=HALF)return i;}return -1;}
+            function getPair(){var a=segAt(B1),b=segAt(B2);if(a>=0&&b>=0){prevP1=a;prevP2=b;}return{p1:prevP1,p2:prevP2};}
+            function seg(i){
+                var a0=(theta+i*SEG-HALF)*Math.PI/180,a1=(theta+i*SEG+HALF)*Math.PI/180;
+                ctx.beginPath();ctx.arc(CX,CY,30,a0,a1);ctx.arc(CX,CY,22,a1,a0,true);ctx.closePath();
+                ctx.fillStyle='#D9A441';ctx.fill();ctx.strokeStyle='#B07F2C';ctx.lineWidth=1;ctx.stroke();
+                var am=(theta+i*SEG)*Math.PI/180;
+                ctx.fillStyle='#7A5A1E';ctx.font='10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+                ctx.fillText(names[i],CX+26*Math.cos(am),CY+26*Math.sin(am));
+            }
+            function brush(ang,label,col){
+                var a=ang*Math.PI/180;
+                ctx.save();ctx.translate(CX,CY);ctx.rotate(a);
+                ctx.fillStyle='#FF7A45';ctx.fillRect(20,-4,14,8);
+                ctx.restore();
+                ctx.strokeStyle='#D2691E';ctx.lineWidth=2;
+                ctx.beginPath();ctx.moveTo(CX+34*Math.cos(a),CY+34*Math.sin(a));ctx.lineTo(CX+82*Math.cos(a),CY+82*Math.sin(a));ctx.stroke();
+                ctx.fillStyle=col;ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+                ctx.fillText(label,CX+92*Math.cos(a),CY+92*Math.sin(a));
+            }
+            function rr(x,y,w,h,r){
+                ctx.beginPath();
+                ctx.moveTo(x+r,y);
+                ctx.arcTo(x+w,y,x+w,y+h,r);
+                ctx.arcTo(x+w,y+h,x,y+h,r);
+                ctx.arcTo(x,y+h,x,y,r);
+                ctx.arcTo(x,y,x+w,y,r);
+                ctx.closePath();
+            }
+            function draw(){
+                ctx.clearRect(0,0,W,H);
+                ctx.beginPath();ctx.arc(CX,CY,170,0,Math.PI*2);ctx.fillStyle='#FBFAF7';ctx.fill();ctx.lineWidth=6;ctx.strokeStyle='#C9C6BE';ctx.stroke();
+                // 定子磁铁：圆角矩形，完整显示（上 N 下 S）
+                ctx.fillStyle='#E05656';rr(110,55,220,38,10);ctx.fill();
+                ctx.fillStyle='#4E7EDB';rr(110,347,220,38,10);ctx.fill();
+                ctx.fillStyle='#FFF';ctx.font='bold 24px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+                ctx.fillText('N',220,72);ctx.fillText('S',220,364);
+                ctx.font='10px sans-serif';ctx.fillText('定子磁铁',220,87);ctx.fillText('定子磁铁',220,379);
+                ctx.strokeStyle='#C9C6BE';ctx.lineWidth=2;ctx.fillStyle='#C9C6BE';
+                var xs=[150,220,290];
+                for(var k=0;k<3;k++){ctx.beginPath();ctx.moveTo(xs[k],96);ctx.lineTo(xs[k],344);ctx.stroke();
+                    ctx.beginPath();ctx.moveTo(xs[k],344);ctx.lineTo(xs[k]-5,332);ctx.lineTo(xs[k]+5,332);ctx.closePath();ctx.fill();}
+                ctx.lineWidth=7;ctx.strokeStyle='#4A4A52';
+                for(var j=0;j<3;j++){var aa=(theta+j*SEG)*Math.PI/180;
+                    ctx.beginPath();ctx.moveTo(CX+44*Math.cos(aa),CY+44*Math.sin(aa));ctx.lineTo(CX+78*Math.cos(aa),CY+78*Math.sin(aa));ctx.stroke();}
+                var pr=getPair(),on1=pr.p1,on2=pr.p2;
+                for(var j2=0;j2<3;j2++){
+                    var on=(j2===on1||j2===on2);
+                    var arm=(theta+j2*SEG)*Math.PI/180;
+                    var cx2=CX+98*Math.cos(arm),cy2=CY+98*Math.sin(arm);
+                    ctx.save();ctx.translate(cx2,cy2);ctx.rotate(arm);
+                    if(on){ctx.fillStyle='#FFD54F';ctx.strokeStyle='#C98A2B';}else{ctx.fillStyle='#E6E4DE';ctx.strokeStyle='#C4C2BA';}
+                    ctx.fillRect(-15,-19,30,38);ctx.lineWidth=2;ctx.strokeRect(-15,-19,30,38);
+                    ctx.fillStyle=on?'#5A4300':'#8A8880';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+                    ctx.fillText(names[j2],0,0);
+                    if(on){
+                        var inward=(j2===on1)?!reversed:reversed;
+                        var hy=inward?46:32,d=inward?1:-1;
+                        ctx.strokeStyle='#8C5A00';ctx.lineWidth=3;
+                        ctx.beginPath();ctx.moveTo(0,inward?32:46);ctx.lineTo(0,hy);ctx.stroke();
+                        ctx.fillStyle='#8C5A00';
+                        ctx.beginPath();ctx.moveTo(0,hy);ctx.lineTo(-5,hy-d*9);ctx.lineTo(5,hy-d*9);ctx.closePath();ctx.fill();
+                        // N/S 磁极标识（加大）
+                        ctx.fillStyle=(j2===on1)?(reversed?'#4E7EDB':'#E05656'):(reversed?'#E05656':'#4E7EDB');
+                        ctx.beginPath();ctx.arc(0,-30,11,0,Math.PI*2);ctx.fill();
+                        ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.stroke();
+                        ctx.fillStyle='#FFF';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+                        ctx.fillText((j2===on1)?(reversed?'S':'N'):(reversed?'N':'S'),0,-30);
+                    }
+                    ctx.restore();
+                }
+                for(var i=0;i<3;i++)seg(i);
+                ctx.beginPath();ctx.arc(CX,CY,16,0,Math.PI*2);ctx.fillStyle='#4A4A52';ctx.fill();
+                if(reversed){brush(B2,'+','#D4380D');brush(B1,'-','#1D5FA8');}
+                else{brush(B1,'+','#D4380D');brush(B2,'-','#1D5FA8');}
+                var names2=names[on1]+'、'+names[on2]+' 通电，'+names[3-on1-on2]+' 悬空';
+                var pn=reversed?(names[on1]+' = S，'+names[on2]+' = N'):(names[on1]+' = N，'+names[on2]+' = S');
+                var dir=reversed?'逆时针（↺）':'顺时针（↻）';
+                var power=reversed?'已调换电源：右下电刷接 −，左下电刷接 +':'正常接法：右下电刷接 +，左下电刷接 −';
+                st.innerHTML='<b>'+dir+'</b>　'+power+'<br>当前：'+names2+'；磁极：'+pn+'<br><span style="color:#6B7280;">'+names[on1]+' 电流由换向片流向中心公共点，'+names[on2]+' 由中心流向换向片（'+(reversed?'已反向':'正向')+'）</span>';
+            }
+            function tick(now){
+                var dt=Math.min(50,now-last);last=now;
+                if(playing){var dir=reversed?-1:1;theta=norm(theta+dir*spd*dt/1000);}
+                draw();
+                requestAnimationFrame(tick);
+            }
+            elPlay.addEventListener('click',function(){playing=!playing;elPlay.textContent=playing?'暂停':'继续';});
+            elFlip.addEventListener('click',function(){reversed=!reversed;});
+            elReset.addEventListener('click',function(){theta=0;reversed=false;playing=true;elPlay.textContent='暂停';});
+            elSpd.addEventListener('input',function(){spd=parseInt(elSpd.value,10)||45;});
+            requestAnimationFrame(tick);
+        }catch(e){console.error(e);}
+    })();
+    </script>
+</body>
+</html>
