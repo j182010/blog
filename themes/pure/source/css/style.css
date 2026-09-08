@@ -6807,15 +6807,11 @@ body.no-sidebar .sidebar {
 }
 
 .marked-body h1 {
-  padding-bottom: 0.3em;
   font-size: 2em;
-  border-bottom: 1px solid #f2f2f2;
 }
 
 .marked-body h2 {
-  padding-bottom: 0.3em;
   font-size: 1.5em;
-  border-bottom: 1px solid #f2f2f2;
 }
 
 .marked-body a {
@@ -9794,4 +9790,20 @@ body.theme-black .marked-body a.doc-card {
 .ins-section .ins-search-item.active header .icon {
   color: #fff;
   opacity: 0.8;
+}
+
+/* ===== 自定义彩色标题：仿飞书标题，颜色可指定（默认主题蓝） ===== */
+.color-title {
+  color: var(--title-color, #2196F3);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 20px 0 12px;
+  padding: 0;
+  border: none;
+}
+
+/* ===== 彩色标题内联版：配合 ## 标题使用，可进目录，颜色可指定 ===== */
+.color-title-inline {
+  color: var(--title-color, #2196F3);
 }
